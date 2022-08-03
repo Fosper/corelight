@@ -1,9 +1,6 @@
 import { existsSync } from 'fs'
 import { Readable, Writable } from 'stream'
 
-// TODO: пофиксить коды ошибок
-// TODO: пофиксить кавычки
-
 export default class {
     static me = `corelight`
     static utc = 0
@@ -336,7 +333,7 @@ export default class {
                                 return
                             }
                             if (availableValuesValueValueType !== `Number`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 2, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
                                 return
                             }
                             switch (availableValuesValueName) {
@@ -357,11 +354,11 @@ export default class {
                         case `minLength`:
                         case `maxLength`:
                             if (optionValueType !== `Number` && optionValueType !== `String` && optionValueType !== `Array`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.options.${optionName}' must be type of 'Number' or 'String' or 'Array', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 3, message: `'opt.options.${optionName}' must be type of 'Number' or 'String' or 'Array', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
                                 return
                             }
                             if (availableValuesValueValueType !== `Number`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 4, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
                                 return
                             }
                             switch (availableValuesValueName) {
@@ -395,7 +392,7 @@ export default class {
                             break
                         case `values`:
                             if (availableValuesValueValueType !== `Array`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Array'. '${availableValuesValueValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 5, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Array'. '${availableValuesValueValueType}' given.` }))
                                 return
                             }
                             if (availableValuesValueValue.length) {
@@ -407,11 +404,11 @@ export default class {
                             break
                         case `existPath`:
                             if (optionValueType !== `String`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'options.${optionName}' must be type of 'String', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 6, message: `'options.${optionName}' must be type of 'String', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
                                 return
                             }
                             if (availableValuesValueValueType !== `Boolean`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.availableValues.${optionName}.${availableValuesValueName}'must be type of 'Boolean'. '${availableValuesValueValueType}' given.` }))
+                                resolve(this.funcError({ me, result, code: 7, message: `'opt.availableValues.${optionName}.${availableValuesValueName}'must be type of 'Boolean'. '${availableValuesValueValueType}' given.` }))
                                 return
                             }
                             if (!availableValuesValueValue) {
@@ -427,7 +424,7 @@ export default class {
                             }
                             break
                         default:
-                            resolve(this.funcError({ me, result, code: 1, message: `'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath' options. '${availableValuesValueName}' given.` }))
+                            resolve(this.funcError({ me, result, code: 8, message: `'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath' options. '${availableValuesValueName}' given.` }))
                             return
                     }
                 }
@@ -529,7 +526,7 @@ export default class {
                 return
             }
             if (!run.data) {
-                resolve(this.funcError({ me, result, code: 1, message: `${me}: Not available values.` }))
+                resolve(this.funcError({ me, result, code: 2, message: `${me}: Not available values.` }))
                 return
             }
 
