@@ -44,7 +44,24 @@ export default class {
         } else {
             result.data = opt.data
         }
-        if (!self) result.stackTrace.push(`${opt.me}: Success.`)
+
+        if (!self) {
+            let dataType = Object.prototype.toString.call(result.data).replace(`[object `, ``).replace(`]`, ``)
+            let availableTypesToString = [ `Undefined`, `Boolean`, `Number`, `String`, `Null` ]
+
+            if (availableTypesToString.includes(dataType)) {
+                result.stackTrace.push(`${opt.me}: Data type: ${dataType}. Data: ${result.data.toString()}.`)
+            } else if (result.data instanceof Readable) {
+                result.stackTrace.push(`${opt.me}: Data type: Readable. Path: ${result.data.path}.`)
+            } else if (result.data instanceof Writable) {
+                result.stackTrace.push(`${opt.me}: Data type: Writable. Path: ${result.data.path}.`)
+            } else if (dataType === `Object`) {
+                result.stackTrace.push(`${opt.me}: Data type: ${dataType}. Data: ${JSON.stringify(result.data)}`)
+            } else {
+                result.stackTrace.push(`${opt.me}: Data type: ${dataType}.`)
+            }
+            result.stackTrace.push(`${opt.me}: Success.`)
+        }
         return result
     }
 
@@ -58,7 +75,7 @@ export default class {
     static getType = (opt = {}) => {
         return new Promise(async (resolve) => {
             let [ me, result, options, run ] = await this.funcInit(`${this.me}->getType`, opt, true)
-            let type = Object.prototype.toString.call(options.data).split(`[object `)[1].replace(`]`, ``)
+            let type = Object.prototype.toString.call(options.data).replace(`[object `, ``).replace(`]`, ``)
 
             resolve(this.funcSuccess({ me, result, data: type }, true ))
             return
@@ -413,11 +430,13 @@ export default class {
                             }
                             if (!availableValuesValueValue) {
                                 if (existsSync(optionValue)) {
+                                    result.stackTrace.push(`${me}: Error: path '${optionValue}' must be not exists.`)
                                     resolve(this.funcSuccess({ me, result, data: false }, true ))
                                     return
                                 }
                             } else {
                                 if (!existsSync(optionValue)) {
+                                    result.stackTrace.push(`${me}: Error: path '${optionValue}' must be exists.`)
                                     resolve(this.funcSuccess({ me, result, data: false }, true ))
                                     return
                                 }
@@ -567,15 +586,8 @@ export default class {
             }
             options = run.data
 
-            let data = Math.floor(Math.random() * (options.max - options.min + 1) + options.min)
-            result.stackTrace.push(`${me}: Data: ${data}`)
-            
-            resolve(this.funcSuccess({ me, result, data }))
+            resolve(this.funcSuccess({ me, result, data: Math.floor(Math.random() * (options.max - options.min + 1) + options.min) }))
             return
         })
-
     }
-
-
-
 }

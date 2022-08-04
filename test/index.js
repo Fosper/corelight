@@ -232,8 +232,8 @@ import corelight from '../'
     // console.log(run)
     // console.log(`\n`)
 
-    // console.log(`Function 'getRandInt':`)
-    // run = await corelight.getRandInt({ initiator: me, stackTrace: result.stackTrace, min: 0, max: 100 })
-    // console.log(run)
-    // console.log(`\n`)
+    console.log(`Function 'getRandInt':`)
+    run = await corelight.getRandInt({ initiator: me, stackTrace: result.stackTrace, min: 0, max: 100 })
+    console.log(run)
+    console.log(`\n`)
 })()
