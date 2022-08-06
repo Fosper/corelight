@@ -237,7 +237,7 @@ export default class {
                 let availableTypesValueType = run.data
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableTypes: availableTypesValue })
+                    run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableTypes: availableTypesValue, hard: options.hard })
                     result.stackTrace = run.stackTrace
                     if (run.error) {
                         resolve(this.funcError({ me, result, run }))
@@ -329,7 +329,7 @@ export default class {
                 let availableValuesValueType = run.data
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableValues: availableValuesValue, hard: options.hard })
+                    run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableValues: availableValuesValue })
                     result.stackTrace = run.stackTrace
                     if (run.error) {
                         resolve(this.funcError({ me, result, run }))
