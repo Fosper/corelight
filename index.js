@@ -329,7 +329,7 @@ export default class {
                 let availableValuesValueType = run.data
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableValues: availableValuesValue })
+                    run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableValues: availableValuesValue, hard: options.hard })
                     result.stackTrace = run.stackTrace
                     if (run.error) {
                         resolve(this.funcError({ me, result, run }))
