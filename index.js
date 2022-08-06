@@ -2,7 +2,7 @@ import { existsSync } from 'fs'
 import { Readable, Writable } from 'stream'
 
 export default class {
-    static me = `corelight`
+    static self = `corelight`
     static utc = 0
 
     static funcInit = (me = `Unknown`, opt = {}, self = false) => {
@@ -10,7 +10,7 @@ export default class {
             if (Object.prototype.toString.call(me) !== `[object String]`) me = `Unknown`
             if (Object.prototype.toString.call(opt.initiator) !== `[object String]`) opt.initiator = `Unknown`
             if (Object.prototype.toString.call(opt.stackTrace) !== `[object Array]`) opt.stackTrace = []
-            me = `${opt.initiator}->${me}`
+            if (me !== `Unknown` && me !== opt.initiator) me = `${opt.initiator}->${me}`
             if (!self) opt.stackTrace.push(`${me}: Started.`)
             let result = { data: null, error: null, stackTrace: opt.stackTrace }
             let options = {}
@@ -74,7 +74,7 @@ export default class {
      */
     static getType = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->getType`, opt, true)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getType`, opt, true)
             let type = Object.prototype.toString.call(options.data).replace(`[object `, ``).replace(`]`, ``)
 
             resolve(this.funcSuccess({ me, result, data: type }, true ))
@@ -93,7 +93,7 @@ export default class {
      */
     static getDefaultOptions = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->getDefaultOptions`, opt, true)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getDefaultOptions`, opt, true)
             
             run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options  })
             result.stackTrace = run.stackTrace
@@ -179,12 +179,13 @@ export default class {
      * @param {array} opt.stackTrace - Default: []
      * @param {object} opt.options - Default: {}
      * @param {object} opt.availableTypes - Default: {}
+     * @param {boolean} opt.hard - Default: false
      * 
      * @returns {promise}
      */
     static isAvailableTypes = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->isAvailableTypes`, opt, true)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->isAvailableTypes`, opt, true)
 
             run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
             result.stackTrace = run.stackTrace
@@ -204,6 +205,16 @@ export default class {
             }
             if (run.data !== `Object`) {
                 options.availableTypes = {}
+            }
+
+            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.hard })
+            result.stackTrace = run.stackTrace
+            if (run.error) {
+                resolve(this.funcError({ me, result, run }))
+                return
+            }
+            if (run.data !== `Boolean`) {
+                options.hard = false
             }
 
             for (const optionName in options.options) {
@@ -239,6 +250,10 @@ export default class {
                     continue
                 }
                 if (availableTypesValueType !== `Array`) {
+                    if (options.hard) {
+                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                        return
+                    }
                     availableTypesValue = []
                 }
                 if (!availableTypesValue.length) {
@@ -272,7 +287,7 @@ export default class {
      */
     static isAvailableValues = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->isAvailableValues`, opt, true)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->isAvailableValues`, opt, true)
 
             run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
             result.stackTrace = run.stackTrace
@@ -461,13 +476,14 @@ export default class {
      * @param {object} opt.defaultOptions - Default: {}
      * @param {object} opt.availableTypes - Default: {}
      * @param {object} opt.availableValues - Default: {}
-     * @param {boolean} opt.hard - Default: false
+     * @param {boolean} opt.defaultOptionsHard - Default: false
+     * @param {boolean} opt.availableTypesHard - Default: false
      * 
      * @returns {promise}
      */
     static getOptions = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->getOptions`, opt, true)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getOptions`, opt, true)
 
             run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
             result.stackTrace = run.stackTrace
@@ -509,17 +525,27 @@ export default class {
                 options.availableValues = {}
             }
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.hard })
+            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.defaultOptionsHard })
             result.stackTrace = run.stackTrace
             if (run.error) {
                 resolve(this.funcError({ me, result, run }))
                 return
             }
             if (run.data !== `Boolean`) {
-                options.hard = false
+                options.defaultOptionsHard = false
             }
 
-            run = await this.getDefaultOptions({ initiator: me, stackTrace: result.stackTrace, options: options.options, defaultOptions: options.defaultOptions, hard: options.hard })
+            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableTypesHard })
+            result.stackTrace = run.stackTrace
+            if (run.error) {
+                resolve(this.funcError({ me, result, run }))
+                return
+            }
+            if (run.data !== `Boolean`) {
+                options.availableTypesHard = false
+            }
+
+            run = await this.getDefaultOptions({ initiator: me, stackTrace: result.stackTrace, options: options.options, defaultOptions: options.defaultOptions, hard: options.defaultOptionsHard })
             result.stackTrace = run.stackTrace
             if (run.error) {
                 resolve(this.funcError({ me, result, run }))
@@ -527,7 +553,7 @@ export default class {
             }
             let newOptions = run.data
 
-            run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: newOptions, availableTypes: options.availableTypes })
+            run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: newOptions, availableTypes: options.availableTypes, hard: options.availableTypesHard })
             result.stackTrace = run.stackTrace
             if (run.error) {
                 resolve(this.funcError({ me, result, run }))
@@ -564,7 +590,7 @@ export default class {
      */
     static getRandInt = (opt = {}) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.me}->getRandInt`, opt)
+            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getRandInt`, opt)
 
             let defaultOptions = {
                 min: 0,
