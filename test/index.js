@@ -1,8 +1,11 @@
 import { createReadStream, createWriteStream } from 'fs'
 import corelight from '../'
 
-(async () => {
-    let [ me, result, options, run ] = await corelight.funcInit(`test`, { initiator: `test.js` })
+const folderName = `test`
+const self = `${folderName}->test.js`;
+
+(async (opt = { initiator: `Run` }) => {
+    let [ me, result, options, run ] = await corelight.funcInit(self, opt)
 
     // console.log(`Function 'getType':`)
     // run = await corelight.getType({ initiator: me, stackTrace: result.stackTrace, data: 123 })
