@@ -1,258 +1,125 @@
 import { existsSync } from 'fs'
 import { Readable, Writable } from 'stream'
+import func from './lib/func'
 
 export default class {
     static self = `corelight`
-    static utc = 0
+    static func = func
 
-    static funcInit = (me = `Unknown`, opt = {}, stackTraceSplit = false, self = false) => {
-        return new Promise(async (resolve) => {
-            if (Object.prototype.toString.call(me) !== `[object String]`) me = `Unknown`
-            if (Object.prototype.toString.call(opt.initiator) !== `[object String]`) opt.initiator = `Unknown`
-            if (Object.prototype.toString.call(opt.stackTrace) !== `[object Array]`) opt.stackTrace = []
-            if (me !== `Unknown` && me !== opt.initiator) me = `${opt.initiator}->${me}`
-            let result = { data: null, error: null }
-            stackTraceSplit ? result.stackTrace = [ ...opt.stackTrace ] : result.stackTrace = opt.stackTrace
-            if (!self) result.stackTrace.push(`${me}: Started.`)
-            let options = {}
-            for (const optionsName in opt) {
-                if (optionsName === `initiator` || optionsName === `stackTrace`) continue
-                options[optionsName] = opt[optionsName]
-            }
-
-            resolve([ me, result, options, null ])
-            return
-        })
-    }
-
-    static funcError = (opt = {}) => {
-        let result = { data: null, error: {}, stackTrace: opt.result.stackTrace }
-        if (opt.run) {
-            result.error.code = opt.run.error.code
-            result.error.message = opt.run.error.message
-        } else {
-            result.error.code = opt.code
-            result.error.message = opt.message
-        }
-        result.stackTrace.push(`${opt.me}: Error code: ${result.error.code}. Error message: ${result.error.message}`)
-        return result
-    }
-
-    static funcSuccess = (opt = {}, self = false) => {
-        let result = { data: null, error: null, stackTrace: opt.result.stackTrace }
-        if (opt.run) {
-            result.data = opt.run.data
-        } else {
-            result.data = opt.data
-        }
-
-        if (!self) {
-            let dataType = Object.prototype.toString.call(result.data).replace(`[object `, ``).replace(`]`, ``)
-            let availableTypesToString = [ `Undefined`, `Boolean`, `Number`, `String`, `Null` ]
-
-            if (availableTypesToString.includes(dataType)) {
-                result.stackTrace.push(`${opt.me}: Data type: ${dataType}. Data: ${result.data.toString()}.`)
-            } else if (result.data instanceof Readable) {
-                result.stackTrace.push(`${opt.me}: Data type: Readable. Path: ${result.data.path}.`)
-            } else if (result.data instanceof Writable) {
-                result.stackTrace.push(`${opt.me}: Data type: Writable. Path: ${result.data.path}.`)
-            } else if (dataType === `Object`) {
-                result.stackTrace.push(`${opt.me}: Data type: ${dataType}. Data: ${JSON.stringify(result.data)}`)
-            } else {
-                result.stackTrace.push(`${opt.me}: Data type: ${dataType}.`)
-            }
-            result.stackTrace.push(`${opt.me}: Success.`)
-        }
-        return result
+    /**
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {any} @argument - Required. 'data'.
+     * 
+     * @returns {object}
+     */
+    static getType = (...opt) => {
+        let func = this.func.init(`${this.self}->getType`, opt)
+            .args(`data`)
+        return func.succ(Object.prototype.toString.call(func.opt.data).replace(`[object `, ``).replace(`]`, ``))
     }
 
     /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {any} opt.data - Default: undefined
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
+     * @param {object} @argument - Default: {}. 'defaultOptions'. Must be second argument.
+     * @param {boolean} @argument - Default: {}. 'overwrite'. Must be third argument.
      * 
      * @returns {promise}
      */
-    static getType = (opt = {}) => {
+    static getDefaultOptions = (...opt) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getType`, opt, false, true)
-            let type = Object.prototype.toString.call(options.data).replace(`[object `, ``).replace(`]`, ``)
+            let func = this.func.init(`${this.self}->getDefaultOptions`, opt)
+                .args(`options`)
+                .args(`defaultOptions`)
+                .args(`overwrite`)
+            let run
 
-            resolve(this.funcSuccess({ me, result, data: type }, true ))
-            return
-        })
-    }
-
-    /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {object} opt.options - Default: {}
-     * @param {object} opt.defaultOptions - Default: {}
-     * @param {boolean} opt.hard - Default: false
-     * 
-     * @returns {promise}
-     */
-    static getDefaultOptions = (opt = {}) => {
-        return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getDefaultOptions`, opt, false, true)
+            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
+            if (this.getType(func, func.opt.defaultOptions).data !== `Object`) func.opt.defaultOptions = {}
+            if (this.getType(func, func.opt.overwrite).data !== `Boolean`) func.opt.overwrite = false
             
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options  })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.options = {}
-            }
+            let newOptions = func.opt.defaultOptions
+            for (const optionName in func.opt.options) {
+                let optionValue = func.opt.options[optionName]
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.defaultOptions })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.defaultOptions = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.hard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Boolean`) {
-                options.hard = false
-            }
-
-            let newOptions = options.defaultOptions
-            for (const optionName in options.options) {
-                let optionValue = options.options[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: optionValue  })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let optionValueType = run.data
-
-                let defaultOptionValue = options.defaultOptions[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: defaultOptionValue  })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let defaultOptionValueType = run.data
+            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
+                let optionValueType = this.getType(func, optionValue).data
+                let defaultOptionValue = func.opt.defaultOptions[optionName]
+                let defaultOptionValueType = this.getType(func, defaultOptionValue).data
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.getDefaultOptions({ initiator: me, stackTrace: result.stackTrace, options: optionValue, defaultOptions: defaultOptionValue, hard: options.hard })
-                    result.stackTrace = run.stackTrace
+                    run = await this.getDefaultOptions(func, optionValue, defaultOptionValue, func.opt.overwrite )
                     if (run.error) {
-                        resolve(this.funcError({ me, result, run }))
+                        resolve(func.error(run))
                         return
                     }
                     newOptions[optionName] = run.data
                     continue
                 }
 
-                if (options.hard) {
+                if (func.opt.overwrite) {
                     if (defaultOptionValueType !== `Undefined`) {
                         newOptions[optionName] = defaultOptionValue
                         continue
                     }
                 }
+
                 if (optionValueType === `Undefined` && defaultOptionValueType !== `Undefined`) {
                     newOptions[optionName] = defaultOptionValue
                 } else {
                     newOptions[optionName] = optionValue
                 }
             }
-
-            resolve(this.funcSuccess({ me, result, data: newOptions }, true ))
+            resolve(func.succ(newOptions))
             return
         })
     }
 
     /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {object} opt.options - Default: {}
-     * @param {object} opt.availableTypes - Default: {}
-     * @param {boolean} opt.hard - Default: false
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
+     * @param {object} @argument - Default: {}. 'availableTypes'. Must be second argument.
+     * @param {boolean} @argument - Default: {}. 'fullMatch'. Must be third argument.
      * 
      * @returns {promise}
      */
-    static isAvailableTypes = (opt = {}) => {
+    static isAvailableTypes = (...opt) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->isAvailableTypes`, opt, false, true)
+            let func = this.func.init(`${this.self}->isAvailableTypes`, opt)
+                .args(`options`)
+                .args(`availableTypes`)
+                .args(`fullMatch`)
+            let run
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.options = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableTypes })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.availableTypes = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.hard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Boolean`) {
-                options.hard = false
-            }
-
-            for (const optionName in options.options) {
-                let optionValue = options.options[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options[optionName] })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let optionValueType = run.data
-
-                let availableTypesValue = options.availableTypes[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: availableTypesValue })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let availableTypesValueType = run.data
-
+            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
+            if (this.getType(func, func.opt.availableTypes).data !== `Object`) func.opt.availableTypes = {}
+            if (this.getType(func, func.opt.fullMatch).data !== `Boolean`) func.opt.fullMatch = false
+    
+            for (const optionName in func.opt.options) {
+                let optionValue = func.opt.options[optionName]
+                let optionValueType = this.getType(func, func.opt.options[optionName]).data
+                let availableTypesValue = func.opt.availableTypes[optionName]
+                let availableTypesValueType = this.getType(func, availableTypesValue).data
+    
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableTypes: availableTypesValue, hard: options.hard })
-                    result.stackTrace = run.stackTrace
+                    run = await this.isAvailableTypes(func, optionValue, availableTypesValue, func.opt.fullMatch)
                     if (run.error) {
-                        resolve(this.funcError({ me, result, run }))
+                        resolve(func.error(run))
                         return
                     }
                     if (!run.data) {
-                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                        resolve(func.succ(run))
                         return
                     }
                     continue
                 }
                 if (availableTypesValueType !== `Array`) {
-                    if (options.hard) {
-                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                    if (func.opt.fullMatch) {
+                        resolve(func.err(`'options.${optionName}' is set, and 'availableTypes.${optionName}' must be type of 'Array' (${availableTypesValueType} given), because 'fullMatch' is true.`, `1`, 2))
+                        resolve(func.succ(false))
                         return
                     }
                     availableTypesValue = []
@@ -269,75 +136,46 @@ export default class {
                 if (optionValue instanceof Writable && availableTypesValue.includes(`Writable`)) {
                     continue
                 }
-                resolve(this.funcSuccess({ me, result, data: false }, true ))
+                resolve(func.err(`'options.${optionName}' must type of '${availableTypesValue.join(`', '`)}'. ${optionValueType} given.`, `2`, 2))
                 return
             }
-
-            resolve(this.funcSuccess({ me, result, data: true }, true ))
+            resolve(func.succ(true))
             return
         })
     }
 
     /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {object} opt.options - Default: {}
-     * @param {object} opt.availableValues - Default: {}
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
+     * @param {object} @argument - Default: {}. 'availableValues'. Must be second argument.
      * 
      * @returns {promise}
      */
-    static isAvailableValues = (opt = {}) => {
+    static isAvailableValues = (...opt) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->isAvailableValues`, opt, false, true)
+            let func = this.func.init(`${this.self}->isAvailableValues`, opt)
+                .args(`options`)
+                .args(`availableValues`)
+            let run
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.options = {}
-            }
+            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
+            if (this.getType(func, func.opt.availableValues).data !== `Object`) func.opt.availableValues = {}
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableValues })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.availableValues = {}
-            }
-
-            for (const optionName in options.options) {
-                let optionValue = options.options[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options[optionName] })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let optionValueType = run.data
-
-                let availableValuesValue = options.availableValues[optionName]
-                run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: availableValuesValue })
-                result.stackTrace = run.stackTrace
-                if (run.error) {
-                    resolve(this.funcError({ me, result, run }))
-                    return
-                }
-                let availableValuesValueType = run.data
+            for (const optionName in func.opt.options) {
+                let optionValue = func.opt.options[optionName]
+                let optionValueType = this.getType(func, func.opt.options[optionName]).data
+                let availableValuesValue = func.opt.availableValues[optionName]
+                let availableValuesValueType = this.getType(func, availableValuesValue).data
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: optionValue, availableValues: availableValuesValue })
-                    result.stackTrace = run.stackTrace
+                    run = await this.isAvailableValues(func, optionValue, availableValuesValue)
                     if (run.error) {
-                        resolve(this.funcError({ me, result, run }))
+                        resolve(func.error(run))
                         return
                     }
                     if (!run.data) {
-                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                        resolve(func.succ(run))
                         return
                     }
                     continue
@@ -349,36 +187,29 @@ export default class {
 
                 for (const availableValuesValueName in availableValuesValue) {
                     let availableValuesValueValue = availableValuesValue[availableValuesValueName]
-
-                    run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: availableValuesValueValue })
-                    result.stackTrace = run.stackTrace
-                    if (run.error) {
-                        resolve(this.funcError({ me, result, run }))
-                        return
-                    }
-                    let availableValuesValueValueType = run.data
+                    let availableValuesValueValueType = this.getType(func, availableValuesValueValue).data
 
                     switch (availableValuesValueName) {
                         case `min`:
                         case `max`:
                             if (optionValueType !== `Number`) {
-                                resolve(this.funcError({ me, result, code: 1, message: `'opt.options.${optionName}' must be type of 'Number', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
+                                resolve(func.err(`'options.${optionName}' must be type of 'Number', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `1`, 1))
                                 return
                             }
                             if (availableValuesValueValueType !== `Number`) {
-                                resolve(this.funcError({ me, result, code: 2, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
+                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.`, `2`, 1))
                                 return
                             }
                             switch (availableValuesValueName) {
                                 case `min`:
                                     if (optionValue < availableValuesValueValue) {
-                                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                        resolve(func.err(`'options.${optionName}' (${optionValue}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `3`, 2))
                                         return
                                     }
                                     break
                                 case `max`:
                                     if (optionValue > availableValuesValueValue) {
-                                        resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                        resolve(func.err(`'options.${optionName}' (${optionValue}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `4`, 2))
                                         return
                                     }
                                     break
@@ -387,23 +218,23 @@ export default class {
                         case `minLength`:
                         case `maxLength`:
                             if (optionValueType !== `Number` && optionValueType !== `String` && optionValueType !== `Array`) {
-                                resolve(this.funcError({ me, result, code: 3, message: `'opt.options.${optionName}' must be type of 'Number' or 'String' or 'Array', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
+                                resolve(func.err(`'options.${optionName}' must be type of 'Number' or 'String' or 'Array', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `5`, 1))
                                 return
                             }
                             if (availableValuesValueValueType !== `Number`) {
-                                resolve(this.funcError({ me, result, code: 4, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.` }))
+                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.`, `6`, 1))
                                 return
                             }
                             switch (availableValuesValueName) {
                                 case `minLength`:
                                     if (optionValueType === `Number`) {
                                         if (optionValue.toString().length < availableValuesValueValue) {
-                                            resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `7`, 2))
                                             return
                                         }
                                     } else {
                                         if (optionValue.length < availableValuesValueValue) {
-                                            resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `7`, 2))
                                             return
                                         }
                                     }
@@ -411,12 +242,12 @@ export default class {
                                 case `maxLength`:
                                     if (optionValueType === `Number`) {
                                         if (optionValue.toString().length > availableValuesValueValue) {
-                                            resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `8`, 2))
                                             return
                                         }
                                     } else {
                                         if (optionValue.length > availableValuesValueValue) {
-                                            resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `8`, 2))
                                             return
                                         }
                                     }
@@ -425,196 +256,111 @@ export default class {
                             break
                         case `values`:
                             if (availableValuesValueValueType !== `Array`) {
-                                resolve(this.funcError({ me, result, code: 5, message: `'opt.availableValues.${optionName}.${availableValuesValueName}' must be type of 'Array'. '${availableValuesValueValueType}' given.` }))
+                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Array'. '${availableValuesValueValueType}' given.`, `9`, 1))
                                 return
                             }
                             if (availableValuesValueValue.length) {
                                 if (!availableValuesValueValue.includes(optionValue)) {
-                                    resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                    resolve(func.err(`'options.${optionName}' value must be one of '${availableValuesValueValue.join(`', '`)}'.`, `10`, 2))
                                     return
                                 }
                             }
                             break
                         case `existPath`:
                             if (optionValueType !== `String`) {
-                                resolve(this.funcError({ me, result, code: 6, message: `'options.${optionName}' must be type of 'String', because 'opt.availableValues.${optionName}' contain '${availableValuesValueName}' option. '${optionValueType}' given.` }))
+                                resolve(func.err(`'options.${optionName}' must be type of 'String', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `11`, 1))
                                 return
                             }
                             if (availableValuesValueValueType !== `Boolean`) {
-                                resolve(this.funcError({ me, result, code: 7, message: `'opt.availableValues.${optionName}.${availableValuesValueName}'must be type of 'Boolean'. '${availableValuesValueValueType}' given.` }))
+                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Boolean'. '${availableValuesValueValueType}' given.`, `12`, 1))
                                 return
                             }
                             if (!availableValuesValueValue) {
                                 if (existsSync(optionValue)) {
-                                    result.stackTrace.push(`${me}: Error: path '${optionValue}' must be not exists.`)
-                                    resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be not exists, because 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue.toString()}).`, `13`, 2))
                                     return
                                 }
                             } else {
                                 if (!existsSync(optionValue)) {
-                                    result.stackTrace.push(`${me}: Error: path '${optionValue}' must be exists.`)
-                                    resolve(this.funcSuccess({ me, result, data: false }, true ))
+                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be exists, because 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue.toString()}).`, `14`, 2))
                                     return
                                 }
                             }
                             break
                         default:
-                            resolve(this.funcError({ me, result, code: 8, message: `'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath' options. '${availableValuesValueName}' given.` }))
+                            resolve(func.err(`'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath' options. '${availableValuesValueName}' given.`, `15`, 1))
                             return
                     }
                 }
             }
-
-            resolve(this.funcSuccess({ me, result, data: true }, true ))
+            resolve(func.succ(true))
             return
         })
     }
 
     /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {object} opt.options - Default: {}
-     * @param {object} opt.defaultOptions - Default: {}
-     * @param {object} opt.availableTypes - Default: {}
-     * @param {object} opt.availableValues - Default: {}
-     * @param {boolean} opt.defaultOptionsHard - Default: false
-     * @param {boolean} opt.availableTypesHard - Default: false
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {function} @argument - Default: () => {}. 'data'.
      * 
      * @returns {promise}
      */
-    static getOptions = (opt = {}) => {
+    static try = (...opt) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getOptions`, opt, false, true)
+            let func = this.func.init(`${this.self}->getRandInt`, opt)
+                .args(`data`)
 
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.options })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.options = {}
-            }
-            
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.defaultOptions })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.defaultOptions = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableTypes })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.availableTypes = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableValues })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Object`) {
-                options.availableValues = {}
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.defaultOptionsHard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Boolean`) {
-                options.defaultOptionsHard = false
-            }
-
-            run = await this.getType({ initiator: me, stackTrace: result.stackTrace, data: options.availableTypesHard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (run.data !== `Boolean`) {
-                options.availableTypesHard = false
-            }
-
-            run = await this.getDefaultOptions({ initiator: me, stackTrace: result.stackTrace, options: options.options, defaultOptions: options.defaultOptions, hard: options.defaultOptionsHard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            let newOptions = run.data
-
-            run = await this.isAvailableTypes({ initiator: me, stackTrace: result.stackTrace, options: newOptions, availableTypes: options.availableTypes, hard: options.availableTypesHard })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
-            }
-            if (!run.data) {
-                resolve(this.funcError({ me, result, code: 1, message: `${me}: Not available types.` }))
+            func.default.data = () => {}
+            func.types.data = [ `Function` ]
+            await func.validate()
+            if (func.result.error) {
+                resolve(func.err())
                 return
             }
 
-            run = await this.isAvailableValues({ initiator: me, stackTrace: result.stackTrace, options: newOptions, availableValues: options.availableValues })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
-                return
+            let result
+            try {
+                result = func.opt.data()
+                resolve(func.succ(result))
+            } catch (error) {
+                resolve(func.err(error))
             }
-            if (!run.data) {
-                resolve(this.funcError({ me, result, code: 2, message: `${me}: Not available values.` }))
-                return
-            }
-
-            resolve(this.funcSuccess({ me, result, data: newOptions }, true ))
             return
         })
     }
 
     /**
-     * @param {string} opt.initiator - Default: 'Unknown'
-     * @param {array} opt.stackTrace - Default: []
-     * @param {number} opt.min - Default: 0
-     * @param {number} opt.max - Default: 1
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {number} @argument - Default: 0. 'min'.
+     * @param {number} @argument - Default: 1. 'max'.
      * 
      * @returns {promise}
      */
-    static getRandInt = (opt = {}) => {
+    static getRandInt = (...opt) => {
         return new Promise(async (resolve) => {
-            let [ me, result, options, run ] = await this.funcInit(`${this.self}->getRandInt`, opt)
+            let func = this.func.init(`${this.self}->getRandInt`, opt)
+                .args(`min`)
+                .args(`max`)
 
-            let defaultOptions = {
+            func.default = {
                 min: 0,
                 max: 1
             }
 
-            let availableTypes = {
+            func.types = {
                 min: [ `Number` ],
                 max: [ `Number` ]
             }
 
-            let availableValues = {}
-
-            run = await this.getOptions({ initiator: me, stackTrace: result.stackTrace, options, defaultOptions, availableTypes, availableValues })
-            result.stackTrace = run.stackTrace
-            if (run.error) {
-                resolve(this.funcError({ me, result, run }))
+            await func.validate()
+            if (func.result.error) {
+                resolve(func.err())
                 return
             }
-            options = run.data
-
-            resolve(this.funcSuccess({ me, result, data: Math.floor(Math.random() * (options.max - options.min + 1) + options.min) }))
+            resolve(func.succ(Math.floor(Math.random() * (func.opt.max - func.opt.min + 1) + func.opt.min)))
             return
         })
     }
+
 }
