@@ -301,6 +301,46 @@ export default class {
     /**
      * @param {object} @argument - Default: {}. 'func' instance.
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
+     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'overwrite', 'fullMatch'
+     * 
+     * @returns {promise}
+     */
+    static validate = (...opt) => {
+        return new Promise(async (resolve) => {
+            let func = this.func.init(`${this.self}->getDefaultOptions`, opt).args()
+            let run
+
+            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
+            if (this.getType(func, func.opt.default).data !== `Object`) func.opt.default = {}
+            if (this.getType(func, func.opt.types).data !== `Object`) func.opt.types = {}
+            if (this.getType(func, func.opt.values).data !== `Object`) func.opt.values = {}
+            if (this.getType(func, func.opt.overwrite).data !== `Boolean`) func.opt.overwrite = false
+            if (this.getType(func, func.opt.fullMatch).data !== `Boolean`) func.opt.fullMatch = false
+
+            run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, func.opt.overwrite)
+            if (run.error) {
+                resolve(func.err(run))
+                return
+            }
+            func.opt.options = run.data
+            run = await this.isAvailableTypes(func, func.opt.options, func.opt.types, func.opt.fullMatch)
+            if (run.error) {
+                resolve(func.err(run))
+                return
+            }
+            run = await this.isAvailableValues(func, func.opt.options, func.opt.values)
+            if (run.error) {
+                resolve(func.err(run))
+                return
+            }
+            resolve(func.succ(func.opt.options))
+            return
+        })
+    }
+
+    /**
+     * @param {object} @argument - Default: {}. 'func' instance.
+     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
      * @param {function} @argument - Default: () => {}. 'data'.
      * 
      * @returns {promise}
