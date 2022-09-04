@@ -19,12 +19,12 @@ const self = `${folderName}->test.js`;
     // console.log(`\n`)
 
     // console.log(`Function 'try':`)
-    // var options = { data: () => {} }
-    // run = await corelight.try(func, options)
+    // var options = { data: () => {return true} }
+    // run = await corelight.try(func, options, { dumpLevel: 2, dumpFunc: console.log })
     // console.log(run)
     // console.log(`\n`)
 
-    // console.log(`Function 'getDefaultOptions' (no overwrite):`)
+    // console.log(`Function 'getDefaultOptions':`)
     // var options = {
     //     test1_1: undefined,
     //     test1_2: true,
@@ -35,7 +35,8 @@ const self = `${folderName}->test.js`;
     //     test1_7: { test2_1: `test` },
     //     test1_9: createReadStream(`/etc/hostname`),
     //     test1_10: createWriteStream(`/etc/hostname`),
-    //     test1_11: () => {}
+    //     test1_11: () => {},
+    //     test1_12: `not in default`
     // }
     // var defaultOptions = {
     //     test1_1: 1,
@@ -50,41 +51,11 @@ const self = `${folderName}->test.js`;
     //     test1_10: createWriteStream(`/etc/hostname`),
     //     test1_11: () => {}
     // }
-    // run = await corelight.getDefaultOptions(func, options, defaultOptions)
+    // run = await corelight.getDefaultOptions(func, options, defaultOptions, { defaultMatch: false, defaultPrimary: false, defaultPure: false })
     // console.log(run)
     // console.log(`\n`)
 
-    // console.log(`Function 'getDefaultOptions' (overwrite):`)
-    // var options = {
-    //     test1_1: undefined,
-    //     test1_2: true,
-    //     test1_3: 1,
-    //     test1_4: `/etc/hostname`,
-    //     test1_5: Symbol(`a`),
-    //     test1_6: null,
-    //     test1_7: { test2_1: `test` },
-    //     test1_9: createReadStream(`/etc/hostname`),
-    //     test1_10: createWriteStream(`/etc/hostname`),
-    //     test1_11: () => {}
-    // }
-    // var defaultOptions = {
-    //     test1_1: 1,
-    //     test1_2: false,
-    //     test1_3: 1,
-    //     test1_4: `/etc/hostname`,
-    //     test1_5: Symbol(`a`),
-    //     test1_6: null,
-    //     test1_7: { test2_1: `test_test`, test2_2: `test_test` },
-    //     test1_8: [ `test1`, `test2` ],
-    //     test1_9: `test`,
-    //     test1_10: createWriteStream(`/etc/hostname`),
-    //     test1_11: () => {}
-    // }
-    // run = await corelight.getDefaultOptions(func, options, defaultOptions, true)
-    // console.log(run)
-    // console.log(`\n`)
-
-    // console.log(`Function 'isAvailableTypes' (no fullMatch):`)
+    // console.log(`Function 'isAvailableTypes':`)
     // var options = {
     //     test1_1: undefined,
     //     test1_2: true,
@@ -96,7 +67,8 @@ const self = `${folderName}->test.js`;
     //     test1_8: [ `test1`, `test2` ],
     //     test1_9: createReadStream(`/etc/hostname`),
     //     test1_10: createWriteStream(`/etc/hostname`),
-    //     test1_11: () => {}
+    //     test1_11: () => {},
+    //     test1_12: `not in default`
     // }
     // var availableTypes = {
     //     test1_1: [ `Undefined` ],
@@ -111,7 +83,7 @@ const self = `${folderName}->test.js`;
     //     test1_10: [ `Writable` ],
     //     test1_11: [ `Function` ],
     // }
-    // run = await corelight.isAvailableTypes(func, options, availableTypes, true)
+    // run = await corelight.isAvailableTypes(func, options, availableTypes, { typesMatch: true })
     // console.log(run)
     // console.log(`\n`)
 
@@ -130,6 +102,7 @@ const self = `${folderName}->test.js`;
     //     test1_11: () => {}
     // }
     // var availableValues = {
+    //     test1_1: {},
     //     test1_2: {
     //         values: [ true ]
     //     },
@@ -146,6 +119,7 @@ const self = `${folderName}->test.js`;
     //         values: [ `/etc/hostname` ],
     //         existPath: true
     //     },
+    //     test1_5: {},
     //     test1_6: {
     //         values: [ null ]
     //     },
@@ -161,12 +135,12 @@ const self = `${folderName}->test.js`;
     //         maxLength: 2
     //     }
     // }
-    // run = await corelight.isAvailableValues(func, options, availableValues)
+    // run = await corelight.isAvailableValues(func, options, availableValues, { valuesMatch: false })
     // console.log(run)
     // console.log(`\n`)
 
     // console.log(`Function 'try' (without errors):`)
-    // run = await corelight.try(func, () => { return 123 })
+    // run = await corelight.try(func, () => { return `Hello world` })
     // console.log(run)
     // console.log(`\n`)
 

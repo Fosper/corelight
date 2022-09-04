@@ -24,7 +24,7 @@ export default class {
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
      * @param {object} @argument - Default: {}. 'options'. Must be first argument.
      * @param {object} @argument - Default: {}. 'defaultOptions'. Must be second argument.
-     * @param {boolean} @argument - Default: {}. 'overwrite'. Must be third argument.
+     * @param {object} @argument - Default: {}. 'defaultMatch', 'defaultPrimary', 'defaultPure'. Must be third argument.
      * 
      * @returns {promise}
      */
@@ -33,40 +33,48 @@ export default class {
             let func = this.func.init(`${this.self}->getDefaultOptions`, opt)
                 .args(`options`)
                 .args(`defaultOptions`)
-                .args(`overwrite`)
+                .args()
             let run
 
             if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
             if (this.getType(func, func.opt.defaultOptions).data !== `Object`) func.opt.defaultOptions = {}
-            if (this.getType(func, func.opt.overwrite).data !== `Boolean`) func.opt.overwrite = false
+            if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
+            if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
             
-            let newOptions = func.opt.defaultOptions
+            let newOptions = {}
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
-
-            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
                 let optionValueType = this.getType(func, optionValue).data
                 let defaultOptionValue = func.opt.defaultOptions[optionName]
                 let defaultOptionValueType = this.getType(func, defaultOptionValue).data
+                let defaultOptionExist = Object.keys(func.opt.defaultOptions).includes(optionName)
+
+                if (func.opt.defaultMatch && !defaultOptionExist) {
+                    resolve(func.err(`'options.${optionName}' must be define in default options, because option 'defaultMatch' is true.`, `1`, 2))
+                    return
+                }
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.getDefaultOptions(func, optionValue, defaultOptionValue, func.opt.overwrite )
+                    run = await this.getDefaultOptions(func, optionValue, defaultOptionValue, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
                     if (run.error) {
-                        resolve(func.error(run))
+                        resolve(func.err(run))
                         return
                     }
                     newOptions[optionName] = run.data
                     continue
                 }
 
-                if (func.opt.overwrite) {
-                    if (defaultOptionValueType !== `Undefined`) {
-                        newOptions[optionName] = defaultOptionValue
-                        continue
-                    }
+                if (func.opt.defaultPrimary && defaultOptionExist) {
+                    newOptions[optionName] = defaultOptionValue
+                    continue
                 }
 
-                if (optionValueType === `Undefined` && defaultOptionValueType !== `Undefined`) {
+                if (func.opt.defaultPure && !defaultOptionExist) {
+                    continue
+                }
+
+                if (optionValueType === `Undefined` && defaultOptionExist) {
                     newOptions[optionName] = defaultOptionValue
                 } else {
                     newOptions[optionName] = optionValue
@@ -82,7 +90,7 @@ export default class {
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
      * @param {object} @argument - Default: {}. 'options'. Must be first argument.
      * @param {object} @argument - Default: {}. 'availableTypes'. Must be second argument.
-     * @param {boolean} @argument - Default: {}. 'fullMatch'. Must be third argument.
+     * @param {object} @argument - Default: {}. 'typesMatch'. Must be third argument.
      * 
      * @returns {promise}
      */
@@ -91,23 +99,29 @@ export default class {
             let func = this.func.init(`${this.self}->isAvailableTypes`, opt)
                 .args(`options`)
                 .args(`availableTypes`)
-                .args(`fullMatch`)
+                .args()
             let run
 
             if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
             if (this.getType(func, func.opt.availableTypes).data !== `Object`) func.opt.availableTypes = {}
-            if (this.getType(func, func.opt.fullMatch).data !== `Boolean`) func.opt.fullMatch = false
+            if (this.getType(func, func.opt.typesMatch).data !== `Boolean`) func.opt.typesMatch = false
     
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
                 let optionValueType = this.getType(func, func.opt.options[optionName]).data
                 let availableTypesValue = func.opt.availableTypes[optionName]
                 let availableTypesValueType = this.getType(func, availableTypesValue).data
+                let availableTypesExist = Object.keys(func.opt.availableTypes).includes(optionName)
     
+                if (func.opt.typesMatch && !availableTypesExist) {
+                    resolve(func.err(`'options.${optionName}' must be define in types options, because option 'typesMatch' is true.`, `1`, 2))
+                    return
+                }
+
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableTypes(func, optionValue, availableTypesValue, func.opt.fullMatch)
+                    run = await this.isAvailableTypes(func, optionValue, availableTypesValue, { typesMatch: func.opt.typesMatch })
                     if (run.error) {
-                        resolve(func.error(run))
+                        resolve(func.err(run))
                         return
                     }
                     if (!run.data) {
@@ -116,12 +130,13 @@ export default class {
                     }
                     continue
                 }
-                if (availableTypesValueType !== `Array`) {
-                    if (func.opt.fullMatch) {
-                        resolve(func.err(`'options.${optionName}' is set, and 'availableTypes.${optionName}' must be type of 'Array' (${availableTypesValueType} given), because 'fullMatch' is true.`, `1`, 2))
-                        resolve(func.succ(false))
-                        return
-                    }
+
+                if (availableTypesValueType !== `Array` && availableTypesValueType !== `Undefined`) {
+                    resolve(func.err(`'options.${optionName}' must be type of 'Array' or 'Undefined'. ${availableTypesValueType} given.`, `2`, 1))
+                    return
+                }
+
+                if (availableTypesValueType === `Undefined`) {
                     availableTypesValue = []
                 }
                 if (!availableTypesValue.length) {
@@ -149,6 +164,7 @@ export default class {
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
      * @param {object} @argument - Default: {}. 'options'. Must be first argument.
      * @param {object} @argument - Default: {}. 'availableValues'. Must be second argument.
+     * @param {object} @argument - Default: {}. 'valuesMatch'. Must be second argument.
      * 
      * @returns {promise}
      */
@@ -157,21 +173,29 @@ export default class {
             let func = this.func.init(`${this.self}->isAvailableValues`, opt)
                 .args(`options`)
                 .args(`availableValues`)
+                .args()
             let run
 
             if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
             if (this.getType(func, func.opt.availableValues).data !== `Object`) func.opt.availableValues = {}
+            if (this.getType(func, func.opt.valuesMatch).data !== `Boolean`) func.opt.valuesMatch = false
 
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
                 let optionValueType = this.getType(func, func.opt.options[optionName]).data
                 let availableValuesValue = func.opt.availableValues[optionName]
                 let availableValuesValueType = this.getType(func, availableValuesValue).data
+                let availableValuesExist = Object.keys(func.opt.availableValues).includes(optionName)
+
+                if (func.opt.valuesMatch && !availableValuesExist) {
+                    resolve(func.err(`'options.${optionName}' must be define in types options, because option 'valuesMatch' is true.`, `1`, 2))
+                    return
+                }
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableValues(func, optionValue, availableValuesValue)
+                    run = await this.isAvailableValues(func, optionValue, availableValuesValue, { valuesMatch: func.opt.valuesMatch })
                     if (run.error) {
-                        resolve(func.error(run))
+                        resolve(func.err(run))
                         return
                     }
                     if (!run.data) {
@@ -301,34 +325,37 @@ export default class {
     /**
      * @param {object} @argument - Default: {}. 'func' instance.
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'overwrite', 'fullMatch'
+     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'defaultMatch', 'defaultPrimary', 'defaultPure', 'typesMatch', 'valuesMatch'
      * 
      * @returns {promise}
      */
     static validate = (...opt) => {
         return new Promise(async (resolve) => {
-            let func = this.func.init(`${this.self}->getDefaultOptions`, opt).args()
+            let func = this.func.init(`${this.self}->validate`, opt).args()
             let run
 
             if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
             if (this.getType(func, func.opt.default).data !== `Object`) func.opt.default = {}
             if (this.getType(func, func.opt.types).data !== `Object`) func.opt.types = {}
             if (this.getType(func, func.opt.values).data !== `Object`) func.opt.values = {}
-            if (this.getType(func, func.opt.overwrite).data !== `Boolean`) func.opt.overwrite = false
-            if (this.getType(func, func.opt.fullMatch).data !== `Boolean`) func.opt.fullMatch = false
+            if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
+            if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
+            if (this.getType(func, func.opt.typesMatch).data !== `Boolean`) func.opt.typesMatch = false
+            if (this.getType(func, func.opt.valuesMatch).data !== `Boolean`) func.opt.valuesMatch = false
 
-            run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, func.opt.overwrite)
+            run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
             if (run.error) {
                 resolve(func.err(run))
                 return
             }
             func.opt.options = run.data
-            run = await this.isAvailableTypes(func, func.opt.options, func.opt.types, func.opt.fullMatch)
+            run = await this.isAvailableTypes(func, func.opt.options, func.opt.types, { typesMatch: func.opt.typesMatch })
             if (run.error) {
                 resolve(func.err(run))
                 return
             }
-            run = await this.isAvailableValues(func, func.opt.options, func.opt.values)
+            run = await this.isAvailableValues(func, func.opt.options, func.opt.values, { valuesMatch: func.opt.valuesMatch })
             if (run.error) {
                 resolve(func.err(run))
                 return
@@ -347,8 +374,9 @@ export default class {
      */
     static try = (...opt) => {
         return new Promise(async (resolve) => {
-            let func = this.func.init(`${this.self}->getRandInt`, opt)
+            let func = this.func.init(`${this.self}->try`, opt)
                 .args(`data`)
+            let run
 
             func.default.data = () => {}
             func.types.data = [ `Function` ]
@@ -358,12 +386,11 @@ export default class {
                 return
             }
 
-            let result
             try {
-                result = func.opt.data()
-                resolve(func.succ(result))
+                run = func.opt.data()
+                resolve(func.succ(run))
             } catch (error) {
-                resolve(func.err(error))
+                resolve(func.err(`${error}`, `1`))
             }
             return
         })
