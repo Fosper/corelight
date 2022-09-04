@@ -24,7 +24,7 @@ export default class {
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
      * @param {object} @argument - Default: {}. 'options'. Must be first argument.
      * @param {object} @argument - Default: {}. 'defaultOptions'. Must be second argument.
-     * @param {object} @argument - Default: {}. 'defaultMatch', 'defaultPrimary', 'defaultPure'. Must be third argument.
+     * @param {object} @argument - Default: {}. 'defaultMatch', 'defaultOptionsMatch', 'defaultPrimary', 'defaultPure'. Must be third argument.
      * 
      * @returns {promise}
      */
@@ -39,6 +39,7 @@ export default class {
             if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
             if (this.getType(func, func.opt.defaultOptions).data !== `Object`) func.opt.defaultOptions = {}
             if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func, func.opt.defaultOptionsMatch).data !== `Boolean`) func.opt.defaultOptionsMatch = false
             if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
             if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
             
@@ -49,14 +50,20 @@ export default class {
                 let defaultOptionValue = func.opt.defaultOptions[optionName]
                 let defaultOptionValueType = this.getType(func, defaultOptionValue).data
                 let defaultOptionExist = Object.keys(func.opt.defaultOptions).includes(optionName)
+                let optionExist = defaultOptionValueType === `Undefined` ? false : true
 
                 if (func.opt.defaultMatch && !defaultOptionExist) {
-                    resolve(func.err(`'options.${optionName}' must be define in default options, because option 'defaultMatch' is true.`, `1`, 2))
+                    resolve(func.err(`'options.${optionName}' must be defined in default options, because option 'defaultMatch' is true.`, `1`, 2))
+                    return
+                }
+
+                if (func.opt.defaultOptionsMatch && !optionExist) {
+                    resolve(func.err(`'default.${optionName}' must be defined in options, because option 'defaultOptionsMatch' is true.`, `1`, 2))
                     return
                 }
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.getDefaultOptions(func, optionValue, defaultOptionValue, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
+                    run = await this.getDefaultOptions(func, optionValue, defaultOptionValue, { defaultMatch: func.opt.defaultMatch, defaultOptionsMatch: func.opt.defaultOptionsMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
                     if (run.error) {
                         resolve(func.err(run))
                         return
@@ -114,7 +121,7 @@ export default class {
                 let availableTypesExist = Object.keys(func.opt.availableTypes).includes(optionName)
     
                 if (func.opt.typesMatch && !availableTypesExist) {
-                    resolve(func.err(`'options.${optionName}' must be define in types options, because option 'typesMatch' is true.`, `1`, 2))
+                    resolve(func.err(`'options.${optionName}' must be defined in types options, because option 'typesMatch' is true.`, `1`, 2))
                     return
                 }
 
@@ -188,7 +195,7 @@ export default class {
                 let availableValuesExist = Object.keys(func.opt.availableValues).includes(optionName)
 
                 if (func.opt.valuesMatch && !availableValuesExist) {
-                    resolve(func.err(`'options.${optionName}' must be define in types options, because option 'valuesMatch' is true.`, `1`, 2))
+                    resolve(func.err(`'options.${optionName}' must be defined in types options, because option 'valuesMatch' is true.`, `1`, 2))
                     return
                 }
 
@@ -325,7 +332,7 @@ export default class {
     /**
      * @param {object} @argument - Default: {}. 'func' instance.
      * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'defaultMatch', 'defaultPrimary', 'defaultPure', 'typesMatch', 'valuesMatch'
+     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'defaultMatch', 'defaultOptionsMatch', 'defaultPrimary', 'defaultPure', 'typesMatch', 'valuesMatch'
      * 
      * @returns {promise}
      */
@@ -339,12 +346,13 @@ export default class {
             if (this.getType(func, func.opt.types).data !== `Object`) func.opt.types = {}
             if (this.getType(func, func.opt.values).data !== `Object`) func.opt.values = {}
             if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func, func.opt.defaultOptionsMatch).data !== `Boolean`) func.opt.defaultOptionsMatch = false
             if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
             if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
             if (this.getType(func, func.opt.typesMatch).data !== `Boolean`) func.opt.typesMatch = false
             if (this.getType(func, func.opt.valuesMatch).data !== `Boolean`) func.opt.valuesMatch = false
 
-            run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
+            run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, { defaultMatch: func.opt.defaultMatch, defaultOptionsMatch: func.opt.defaultOptionsMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
             if (run.error) {
                 resolve(func.err(run))
                 return
