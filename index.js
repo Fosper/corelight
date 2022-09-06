@@ -7,16 +7,14 @@ export default class {
     static func = func
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {any} @argument - Required. 'data'.
+     * @param {any} @argument - Default: undefined.
      * 
-     * @returns {object}
+     * @returns {string}
      */
     static getType = (...opt) => {
-        let func = this.func.init(`${this.self}->getType`, opt)
-            .args(`data`)
-        return func.succ(Object.prototype.toString.call(func.opt.data).replace(`[object `, ``).replace(`]`, ``))
+        let value = undefined
+        if (opt.length) value = opt[0]
+        return Object.prototype.toString.call(value).replace(`[object `, ``).replace(`]`, ``)
     }
 
     /**
@@ -36,18 +34,17 @@ export default class {
                 .args()
             let run
 
-            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
-            if (this.getType(func, func.opt.defaultOptions).data !== `Object`) func.opt.defaultOptions = {}
-            if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
-            if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
-            if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
+            if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
+            if (this.getType(func.opt.defaultOptions) !== `Object`) func.opt.defaultOptions = {}
+            if (this.getType(func.opt.defaultMatch) !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func.opt.defaultPrimary) !== `Boolean`) func.opt.defaultPrimary = false
+            if (this.getType(func.opt.defaultPure) !== `Boolean`) func.opt.defaultPure = false
             
             let newOptions = {}
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
-                let optionValueType = this.getType(func, optionValue).data
+                let optionValueType = this.getType(optionValue)
                 let defaultOptionValue = func.opt.defaultOptions[optionName]
-                let defaultOptionValueType = this.getType(func, defaultOptionValue).data
                 let defaultOptionExist = Object.keys(func.opt.defaultOptions).includes(optionName)
 
                 if (func.opt.defaultMatch && !defaultOptionExist) {
@@ -102,15 +99,15 @@ export default class {
                 .args()
             let run
 
-            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
-            if (this.getType(func, func.opt.availableTypes).data !== `Object`) func.opt.availableTypes = {}
-            if (this.getType(func, func.opt.typesMatch).data !== `Boolean`) func.opt.typesMatch = false
+            if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
+            if (this.getType(func.opt.availableTypes) !== `Object`) func.opt.availableTypes = {}
+            if (this.getType(func.opt.typesMatch) !== `Boolean`) func.opt.typesMatch = false
     
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
-                let optionValueType = this.getType(func, func.opt.options[optionName]).data
+                let optionValueType = this.getType(func.opt.options[optionName])
                 let availableTypesValue = func.opt.availableTypes[optionName]
-                let availableTypesValueType = this.getType(func, availableTypesValue).data
+                let availableTypesValueType = this.getType(availableTypesValue)
                 let availableTypesExist = Object.keys(func.opt.availableTypes).includes(optionName)
     
                 if (func.opt.typesMatch && !availableTypesExist) {
@@ -176,15 +173,15 @@ export default class {
                 .args()
             let run
 
-            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
-            if (this.getType(func, func.opt.availableValues).data !== `Object`) func.opt.availableValues = {}
-            if (this.getType(func, func.opt.valuesMatch).data !== `Boolean`) func.opt.valuesMatch = false
+            if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
+            if (this.getType(func.opt.availableValues) !== `Object`) func.opt.availableValues = {}
+            if (this.getType(func.opt.valuesMatch) !== `Boolean`) func.opt.valuesMatch = false
 
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
-                let optionValueType = this.getType(func, func.opt.options[optionName]).data
+                let optionValueType = this.getType(func.opt.options[optionName])
                 let availableValuesValue = func.opt.availableValues[optionName]
-                let availableValuesValueType = this.getType(func, availableValuesValue).data
+                let availableValuesValueType = this.getType(availableValuesValue)
                 let availableValuesExist = Object.keys(func.opt.availableValues).includes(optionName)
 
                 if (func.opt.valuesMatch && !availableValuesExist) {
@@ -211,7 +208,7 @@ export default class {
 
                 for (const availableValuesValueName in availableValuesValue) {
                     let availableValuesValueValue = availableValuesValue[availableValuesValueName]
-                    let availableValuesValueValueType = this.getType(func, availableValuesValueValue).data
+                    let availableValuesValueValueType = this.getType(availableValuesValueValue)
 
                     switch (availableValuesValueName) {
                         case `min`:
@@ -334,15 +331,15 @@ export default class {
             let func = this.func.init(`${this.self}->validate`, opt).args()
             let run
 
-            if (this.getType(func, func.opt.options).data !== `Object`) func.opt.options = {}
-            if (this.getType(func, func.opt.default).data !== `Object`) func.opt.default = {}
-            if (this.getType(func, func.opt.types).data !== `Object`) func.opt.types = {}
-            if (this.getType(func, func.opt.values).data !== `Object`) func.opt.values = {}
-            if (this.getType(func, func.opt.defaultMatch).data !== `Boolean`) func.opt.defaultMatch = false
-            if (this.getType(func, func.opt.defaultPrimary).data !== `Boolean`) func.opt.defaultPrimary = false
-            if (this.getType(func, func.opt.defaultPure).data !== `Boolean`) func.opt.defaultPure = false
-            if (this.getType(func, func.opt.typesMatch).data !== `Boolean`) func.opt.typesMatch = false
-            if (this.getType(func, func.opt.valuesMatch).data !== `Boolean`) func.opt.valuesMatch = false
+            if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
+            if (this.getType(func.opt.default) !== `Object`) func.opt.default = {}
+            if (this.getType(func.opt.types) !== `Object`) func.opt.types = {}
+            if (this.getType(func.opt.values) !== `Object`) func.opt.values = {}
+            if (this.getType(func.opt.defaultMatch) !== `Boolean`) func.opt.defaultMatch = false
+            if (this.getType(func.opt.defaultPrimary) !== `Boolean`) func.opt.defaultPrimary = false
+            if (this.getType(func.opt.defaultPure) !== `Boolean`) func.opt.defaultPure = false
+            if (this.getType(func.opt.typesMatch) !== `Boolean`) func.opt.typesMatch = false
+            if (this.getType(func.opt.valuesMatch) !== `Boolean`) func.opt.valuesMatch = false
 
             run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
             if (run.error) {

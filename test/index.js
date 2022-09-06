@@ -1,59 +1,49 @@
 import { createReadStream, createWriteStream } from 'fs'
 import corelight from '../'
-import { resolve } from 'dns';
 
 const folderName = `test`
 const self = `${folderName}->test.js`;
 
 (async (...opt) => {
-    let func = corelight.func.init(self, opt, `Run`, 1)
+    let func = corelight.func.init(self, opt, { dumpLevel: 2, initiator: `Run` })
     let run
 
     // console.log(`Function 'getType':`)
-    // var options = 123
+    // var options = `test string`
     // run = corelight.getType(func, options)
     // console.log(run)
     // console.log(`\n`)
-    // run = corelight.getType(func, options, { dumpLevel: 3, dumpFunc: console.log })
+
+    // console.log(`Function 'getDefaultOptions':`)
+    // var options = {
+    //     test1_1: undefined,
+    //     test1_2: true,
+    //     test1_3: 1,
+    //     test1_4: `/etc/hostname`,
+    //     test1_5: Symbol(`a`),
+    //     test1_6: null,
+    //     test1_7: { test2_1: `test` },
+    //     test1_9: createReadStream(`/etc/hostname`),
+    //     test1_10: createWriteStream(`/etc/hostname`),
+    //     test1_11: () => {},
+    //     test1_12: `not in default`
+    // }
+    // var defaultOptions = {
+    //     test1_1: 1,
+    //     test1_2: false,
+    //     test1_3: 1,
+    //     test1_4: `/etc/hostname`,
+    //     test1_5: Symbol(`a`),
+    //     test1_6: null,
+    //     test1_7: { test2_1: `test_test`, test2_2: `test_test` },
+    //     test1_8: [ `test1`, `test2` ],
+    //     test1_9: `test`,
+    //     test1_10: createWriteStream(`/etc/hostname`),
+    //     test1_11: () => {}
+    // }
+    // run = await corelight.getDefaultOptions(func, options, defaultOptions, { defaultMatch: false, defaultPrimary: false, defaultPure: false })
     // console.log(run)
     // console.log(`\n`)
-
-    // console.log(`Function 'try':`)
-    // var options = { data: () => {return true} }
-    // run = await corelight.try(func, options, { dumpLevel: 2, dumpFunc: console.log })
-    // console.log(run)
-    // console.log(`\n`)
-
-    console.log(`Function 'getDefaultOptions':`)
-    var options = {
-        test1_1: undefined,
-        test1_2: true,
-        test1_3: 1,
-        test1_4: `/etc/hostname`,
-        test1_5: Symbol(`a`),
-        test1_6: null,
-        test1_7: { test2_1: `test` },
-        test1_9: createReadStream(`/etc/hostname`),
-        test1_10: createWriteStream(`/etc/hostname`),
-        test1_11: () => {},
-        test1_12: `not in default`
-    }
-    var defaultOptions = {
-        test1_1: 1,
-        test1_2: false,
-        test1_3: 1,
-        test1_4: `/etc/hostname`,
-        test1_5: Symbol(`a`),
-        test1_6: null,
-        test1_7: { test2_1: `test_test`, test2_2: `test_test` },
-        test1_8: [ `test1`, `test2` ],
-        test1_9: `test`,
-        test1_10: createWriteStream(`/etc/hostname`),
-        test1_11: () => {}
-    }
-    run = await corelight.getDefaultOptions(func, options, defaultOptions, { defaultMatch: false, defaultPrimary: false, defaultPure: false })
-    console.log(run)
-    console.log(`\n`)
 
     // console.log(`Function 'isAvailableTypes':`)
     // var options = {
