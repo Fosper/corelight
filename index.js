@@ -7,7 +7,7 @@ export default class {
     static func = func
 
     /**
-     * @param {any} @argument - Default: undefined.
+     * @arg {any} - Default: undefined.
      * 
      * @returns {string}
      */
@@ -18,11 +18,11 @@ export default class {
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
-     * @param {object} @argument - Default: {}. 'defaultOptions'. Must be second argument.
-     * @param {object} @argument - Default: {}. 'defaultMatch', 'defaultPrimary', 'defaultPure'. Must be third argument.
+     * @arg {object-1.options        {object}} - Default: {}
+     * @arg {object-1.defaultOptions {object}} - Default: {}
+     * @arg {object-2.defaultMatch   {boolean}} - Default: false
+     * @arg {object-2.defaultPrimary {boolean}} - Default: false
+     * @arg {object-2.defaultPure    {boolean}} - Default: false
      * 
      * @returns {promise}
      */
@@ -83,11 +83,9 @@ export default class {
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
-     * @param {object} @argument - Default: {}. 'availableTypes'. Must be second argument.
-     * @param {object} @argument - Default: {}. 'typesMatch'. Must be third argument.
+     * @arg {object_1.options        {object}} - Default: {}
+     * @arg {object_1.availableTypes {object}} - Default: {}
+     * @arg {object_2.typesMatch     {boolean}} - Default: false
      * 
      * @returns {promise}
      */
@@ -157,11 +155,9 @@ export default class {
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options'. Must be first argument.
-     * @param {object} @argument - Default: {}. 'availableValues'. Must be second argument.
-     * @param {object} @argument - Default: {}. 'valuesMatch'. Must be second argument.
+     * @arg {object_1.options         {object}} - Default: {}
+     * @arg {object_1.availableValues {object}} - Default: {}
+     * @arg {object_2.valuesMatch     {boolean}} - Default: false
      * 
      * @returns {promise}
      */
@@ -171,26 +167,86 @@ export default class {
                 .args(`options`)
                 .args(`availableValues`)
                 .args()
-            let run
 
             if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
             if (this.getType(func.opt.availableValues) !== `Object`) func.opt.availableValues = {}
             if (this.getType(func.opt.valuesMatch) !== `Boolean`) func.opt.valuesMatch = false
 
+            let isInt = (value, mustBePositive = false, mustBeNegative = false) => {
+                if (this.getType(value) !== `Number`) return false
+                if (value === Number.NaN) return false
+                if (value === Number.POSITIVE_INFINITY) return false
+                if (value === Number.NEGATIVE_INFINITY) return false
+                // if (value < Number.EPSILON) return false
+                if (value > Number.MAX_SAFE_INTEGER) return false
+                if (value < Number.MIN_SAFE_INTEGER) return false
+
+                if (value.toString().includes(`.`) && value > MAX_VALUE) return false
+                if (value.toString().includes(`.`) && value < MIN_VALUE) return false
+                if (mustBePositive && value < 0) return false
+                if (mustBeNegative && value >= 0) return false
+                return true
+            }
+
+            let isBigInt = (value, mustBePositive = false, mustBeNegative = false) => {
+                if (this.getType(value) !== `String`) return false
+                let availableChars = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `-` ]
+                if (mustBePositive) availableChars.shift()
+                let numbers = value.split(``)
+                for (let number of numbers) if (!availableChars.includes(number)) { return false }
+                if (mustBePositive && BigInt(value) < BigInt(`0`)) return false
+                if (mustBeNegative && BigInt(value) >= BigInt(`0`)) return false
+                return true
+            }
+
+            let isValid = (optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes) => {
+                let result = { data: true, dumpLevel: null }
+                if (validOptionTypes.length) {
+                    if (!validOptionTypes.includes(optionValueType)) {
+                        result.data = `'options.${optionName}' must be type of '${validOptionTypes.join(`', '`)}'. Because 'availableValues.${optionName}.${valuesValueName}' is set. '${optionValueType}' given.`
+                        result.dumpLevel = 2
+                        return result
+                    }
+                }
+                if (validValueTypes.length) {
+                    if (!validValueTypes.includes(valuesValueValueType)) {
+                        result.data = `'availableValues.${optionName}.${valuesValueName}' must be type of '${validValueTypes.join(`', '`)}'. '${valuesValueValueType}' given.`
+                        result.dumpLevel = 1
+                        return result
+                    }
+                }
+                if (optionValueType === `Number`) {
+                    if (!isInt(optionValue)) {
+                        result.data = `'options.${optionName}' must be type of valid 'Number'. Because 'availableValues.${optionName}.${valuesValueName}' is set. Invalid 'Number' given.`
+                        result.dumpLevel = 2
+                        return result
+                    }
+                }
+                if (valuesValueValueType === `Number`) {
+                    if (!isInt(valuesValueValue)) {
+                        result.data = `'availableValues.${optionName}.${valuesValueName}' must be type of valid 'Number'. Invalid 'Number' given.`
+                        result.dumpLevel = 1
+                        return result
+                    }
+                }
+                return result
+            }
+
+            let run
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
                 let optionValueType = this.getType(func.opt.options[optionName])
-                let availableValuesValue = func.opt.availableValues[optionName]
-                let availableValuesValueType = this.getType(availableValuesValue)
-                let availableValuesExist = Object.keys(func.opt.availableValues).includes(optionName)
+                let valuesValue = func.opt.availableValues[optionName]
+                let valuesValueType = this.getType(valuesValue)
+                let valuesValueExist = Object.keys(func.opt.availableValues).includes(optionName)
 
-                if (func.opt.valuesMatch && !availableValuesExist) {
+                if (func.opt.valuesMatch && !valuesValueExist) {
                     resolve(func.err(`'options.${optionName}' must be defined in types options, because option 'valuesMatch' is true.`, `1`, 2))
                     return
                 }
 
                 if (optionValueType === `Object` && !(optionValue instanceof Readable) && !(optionValue instanceof Writable)) {
-                    run = await this.isAvailableValues(func, optionValue, availableValuesValue, { valuesMatch: func.opt.valuesMatch })
+                    run = await this.isAvailableValues(func, optionValue, valuesValue, { valuesMatch: func.opt.valuesMatch })
                     if (run.error) {
                         resolve(func.err(run))
                         return
@@ -202,35 +258,102 @@ export default class {
                     continue
                 }
 
-                if (availableValuesValueType !== `Object`) {
-                    availableValuesValue = {}
+                if (valuesValueType !== `Object`) {
+                    valuesValue = {}
                 }
 
-                for (const availableValuesValueName in availableValuesValue) {
-                    let availableValuesValueValue = availableValuesValue[availableValuesValueName]
-                    let availableValuesValueValueType = this.getType(availableValuesValueValue)
+                let validOptionTypes = []
+                let validValueTypes = []
+                for (const valuesValueName in valuesValue) {
+                    let valuesValueValue = valuesValue[valuesValueName]
+                    let valuesValueValueType = this.getType(valuesValueValue)
 
-                    switch (availableValuesValueName) {
+                    switch (valuesValueName) {
                         case `min`:
                         case `max`:
-                            if (optionValueType !== `Number`) {
-                                resolve(func.err(`'options.${optionName}' must be type of 'Number', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `1`, 1))
+                            validOptionTypes = [ `Number`, `String` ]
+                            validValueTypes = [ `Number`, `String` ]
+
+                            run = isValid(optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes)
+                            if (run.dumpLevel) {
+                                resolve(func.err(run.data, `2`, run.dumpLevel))
                                 return
                             }
-                            if (availableValuesValueValueType !== `Number`) {
-                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.`, `2`, 1))
+
+                            if (optionValueType === `String` && !isBigInt(optionValue)) {
+                                resolve(func.err(`'options.${optionName}' must be valid 'BigInt'. '${optionValue}' given.`, `3`, 2))
                                 return
                             }
-                            switch (availableValuesValueName) {
+                            if (valuesValueValueType === `String` && !isBigInt(valuesValueValue)) {
+                                resolve(func.err(`'availableValues.${optionName}.${valuesValueName}' must be valid 'BigInt'. '${valuesValueValue}' given.`, `4`, 1))
+                                return
+                            }
+
+                            switch (valuesValueName) {
                                 case `min`:
-                                    if (optionValue < availableValuesValueValue) {
-                                        resolve(func.err(`'options.${optionName}' (${optionValue}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `3`, 2))
-                                        return
+                                    if (isInt(optionValue) && isInt(valuesValueValue)) {
+                                        if (optionValue < valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' (${optionValue}) less than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `5`, 2))
+                                            return
+                                        }
+                                    } else {
+                                        if (BigInt(optionValue.toString()) < BigInt(valuesValueValue.toString())) {
+                                            resolve(func.err(`'options.${optionName}' (${optionValue}) less than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `6`, 2))
+                                            return
+                                        }
                                     }
                                     break
                                 case `max`:
-                                    if (optionValue > availableValuesValueValue) {
-                                        resolve(func.err(`'options.${optionName}' (${optionValue}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `4`, 2))
+                                    if (isInt(optionValue) && isInt(valuesValueValue)) {
+                                        if (optionValue > valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' (${optionValue}) more than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `7`, 2))
+                                            return
+                                        }
+                                    } else {
+                                        if (BigInt(optionValue.toString()) > BigInt(valuesValueValue.toString())) {
+                                            resolve(func.err(`'options.${optionName}' (${optionValue}) more than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `8`, 2))
+                                            return
+                                        }
+                                    }
+                                    break
+                            }
+                            break
+                        case `mustBePositiveNum`:
+                        case `mustBeNegativeNum`:
+                            validOptionTypes = [ `Number`, `String` ]
+                            validValueTypes = [ `Boolean` ]
+
+                            run = isValid(optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes)
+                            if (run.dumpLevel) {
+                                resolve(func.err(run.data, `9`, run.dumpLevel))
+                                return
+                            }
+
+                            if (optionValueType === `String` && !isBigInt(optionValue)) {
+                                resolve(func.err(`'options.${optionName}' must be valid 'BigInt'. '${optionValue}' given.`, `10`, 2))
+                                return
+                            }
+
+                            switch (valuesValueName) {
+                                case `mustBePositiveNum`:
+                                    if (optionValueType === `String`) {
+                                        if (!isBigInt(optionValue, true, false)) {
+                                            resolve(func.err(`'options.${optionName}' must be positive 'BigInt'. Because 'availableValues.${optionName}.${valuesValueName}' is true. '${optionValue}' given.`, `11`, 2))
+                                            return
+                                        }
+                                    } else if (!isInt(optionValue, true, false)) {
+                                        resolve(func.err(`'options.${optionName}' must be positive 'Number'. Because 'availableValues.${optionName}.${valuesValueName}' is true. '${optionValue}' given.`, `12`, 2))
+                                        return
+                                    }
+                                    break
+                                case `mustBeNegativeNum`:
+                                    if (optionValueType === `String`) {
+                                        if (!isBigInt(optionValue, false, true)) {
+                                            resolve(func.err(`'options.${optionName}' must be negative 'BigInt'. Because 'availableValues.${optionName}.${valuesValueName}' is true. '${optionValue}' given.`, `13`, 2))
+                                            return
+                                        }
+                                    } else if (!isInt(optionValue, false, true)) {
+                                        resolve(func.err(`'options.${optionName}' must be negative 'Number'. Because 'availableValues.${optionName}.${valuesValueName}' is true. '${optionValue}' given.`, `14`, 2))
                                         return
                                     }
                                     break
@@ -238,37 +361,38 @@ export default class {
                             break
                         case `minLength`:
                         case `maxLength`:
-                            if (optionValueType !== `Number` && optionValueType !== `String` && optionValueType !== `Array`) {
-                                resolve(func.err(`'options.${optionName}' must be type of 'Number' or 'String' or 'Array', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `5`, 1))
+                            validOptionTypes = [ `Number`, `String`, `Array` ]
+                            validValueTypes = [ `Number` ]
+
+                            run = isValid(optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes)
+                            if (run.dumpLevel) {
+                                resolve(func.err(run.data, `15`, run.dumpLevel))
                                 return
                             }
-                            if (availableValuesValueValueType !== `Number`) {
-                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Number'. '${availableValuesValueValueType}' given.`, `6`, 1))
-                                return
-                            }
-                            switch (availableValuesValueName) {
+
+                            switch (valuesValueName) {
                                 case `minLength`:
                                     if (optionValueType === `Number`) {
-                                        if (optionValue.toString().length < availableValuesValueValue) {
-                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `7`, 2))
+                                        if (optionValue.toString().length < valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `16`, 2))
                                             return
                                         }
                                     } else {
-                                        if (optionValue.length < availableValuesValueValue) {
-                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `7`, 2))
+                                        if (optionValue.length < valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) less than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `17`, 2))
                                             return
                                         }
                                     }
                                     break
                                 case `maxLength`:
                                     if (optionValueType === `Number`) {
-                                        if (optionValue.toString().length > availableValuesValueValue) {
-                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `8`, 2))
+                                        if (optionValue.toString().length > valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `18`, 2))
                                             return
                                         }
                                     } else {
-                                        if (optionValue.length > availableValuesValueValue) {
-                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue}).`, `8`, 2))
+                                        if (optionValue.length > valuesValueValue) {
+                                            resolve(func.err(`'options.${optionName}' length (${optionValue.length}) more than 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue}).`, `19`, 2))
                                             return
                                         }
                                     }
@@ -276,40 +400,46 @@ export default class {
                             }
                             break
                         case `values`:
-                            if (availableValuesValueValueType !== `Array`) {
-                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Array'. '${availableValuesValueValueType}' given.`, `9`, 1))
+                            validOptionTypes = []
+                            validValueTypes = [ `Array` ]
+
+                            run = isValid(optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes)
+                            if (run.dumpLevel) {
+                                resolve(func.err(run.data, `20`, run.dumpLevel))
                                 return
                             }
-                            if (availableValuesValueValue.length) {
-                                if (!availableValuesValueValue.includes(optionValue)) {
-                                    resolve(func.err(`'options.${optionName}' value must be one of '${availableValuesValueValue.join(`', '`)}'.`, `10`, 2))
+                            
+                            if (valuesValueValue.length) {
+                                if (!valuesValueValue.includes(optionValue)) {
+                                    resolve(func.err(`'options.${optionName}' value must be one of '${valuesValueValue.join(`', '`)}'.`, `21`, 2))
                                     return
                                 }
                             }
                             break
                         case `existPath`:
-                            if (optionValueType !== `String`) {
-                                resolve(func.err(`'options.${optionName}' must be type of 'String', because 'availableValues.${optionName}.${availableValuesValueName}' is set. '${optionValueType}' given.`, `11`, 1))
+                            validOptionTypes = [ `String` ]
+                            validValueTypes = [ `Boolean` ]
+
+                            run = isValid(optionName, optionValue, optionValueType, valuesValueName, valuesValueValue, valuesValueValueType, validOptionTypes, validValueTypes)
+                            if (run.dumpLevel) {
+                                resolve(func.err(run.data, `22`, run.dumpLevel))
                                 return
                             }
-                            if (availableValuesValueValueType !== `Boolean`) {
-                                resolve(func.err(`'availableValues.${optionName}.${availableValuesValueName}' must be type of 'Boolean'. '${availableValuesValueValueType}' given.`, `12`, 1))
-                                return
-                            }
-                            if (!availableValuesValueValue) {
+
+                            if (!valuesValueValue) {
                                 if (existsSync(optionValue)) {
-                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be not exists, because 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue.toString()}).`, `13`, 2))
+                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be not exists, because 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue.toString()}).`, `23`, 2))
                                     return
                                 }
                             } else {
                                 if (!existsSync(optionValue)) {
-                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be exists, because 'availableValues.${optionName}.${availableValuesValueName}' (${availableValuesValueValue.toString()}).`, `14`, 2))
+                                    resolve(func.err(`'options.${optionName}' (${optionValue}) path must be exists, because 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue.toString()}).`, `24`, 2))
                                     return
                                 }
                             }
                             break
                         default:
-                            resolve(func.err(`'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath' options. '${availableValuesValueName}' given.`, `15`, 1))
+                            resolve(func.err(`'options.availableValues.${optionName}' can contain 'min', 'max', 'minLength', 'maxLength', 'values', 'existPath', 'mustBePositiveNum', 'mustBeNegativeNum' options. '${valuesValueName}' given.`, `25`, 1))
                             return
                     }
                 }
@@ -320,16 +450,21 @@ export default class {
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {object} @argument - Default: {}. 'options', 'default', 'types', 'values', 'defaultMatch', 'defaultPrimary', 'defaultPure', 'typesMatch', 'valuesMatch'
+     * @arg {object.options        {object}} - Default: {}
+     * @arg {object.default        {object}} - Default: {}
+     * @arg {object.types          {object}} - Default: {}
+     * @arg {object.defaultMatch   {boolean}} - Default: false
+     * @arg {object.defaultPrimary {boolean}} - Default: false
+     * @arg {object.defaultPure    {boolean}} - Default: false
+     * @arg {object.typesMatch     {boolean}} - Default: false
+     * @arg {object.valuesMatch    {boolean}} - Default: false
      * 
-     * @returns {promise}
+     * @returns {promise} 
      */
     static validate = (...opt) => {
         return new Promise(async (resolve) => {
-            let func = this.func.init(`${this.self}->validate`, opt).args()
-            let run
+            let func = this.func.init(`${this.self}->validate`, opt)
+                .args()
 
             if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
             if (this.getType(func.opt.default) !== `Object`) func.opt.default = {}
@@ -341,6 +476,7 @@ export default class {
             if (this.getType(func.opt.typesMatch) !== `Boolean`) func.opt.typesMatch = false
             if (this.getType(func.opt.valuesMatch) !== `Boolean`) func.opt.valuesMatch = false
 
+            let run
             run = await this.getDefaultOptions(func, func.opt.options, func.opt.default, { defaultMatch: func.opt.defaultMatch, defaultPrimary: func.opt.defaultPrimary, defaultPure: func.opt.defaultPure })
             if (run.error) {
                 resolve(func.err(run))
@@ -363,9 +499,7 @@ export default class {
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {function} @argument - Default: () => {}. 'data'.
+     * @arg {function} - Default: () => {}.
      * 
      * @returns {promise}
      */
@@ -373,31 +507,39 @@ export default class {
         return new Promise(async (resolve) => {
             let func = this.func.init(`${this.self}->try`, opt)
                 .args(`data`)
-            let run
 
-            func.default.data = () => {}
-            func.types.data = [ `Function` ]
+            func.default = {
+                data: () => {}
+            }
+
+            func.types = {
+                data: [ `Function` ]
+            }
+
             await func.validate()
-            if (func.result.error) {
-                resolve(func.err())
-                return
-            }
+            if (func.result.error) { resolve(func.err()); return }
 
-            try {
-                run = func.opt.data()
-                resolve(func.succ(run))
-            } catch (error) {
-                resolve(func.err(`${error}`, `1`))
-            }
+            let run
+            try { run = func.opt.data(); resolve(func.succ(run)) } catch (error) { resolve(func.err(`error`, `1`)) }
             return
         })
     }
 
     /**
-     * @param {object} @argument - Default: {}. 'func' instance.
-     * @param {object} @argument - Default: {}. 'dumpLevel', 'dumpSplit', 'dumpFunc'.
-     * @param {number} @argument - Default: 0. 'min'.
-     * @param {number} @argument - Default: 1. 'max'.
+     * @arg {number} - Default: 0. For define min value.
+     * @arg {number} - Default: 1. For define max value.
+     * 
+     * @returns {promise}
+     */
+    static isValidNum = (...opt) => {
+        return new Promise(async (resolve) => {
+
+        })
+    }
+
+    /**
+     * @arg {number} - Default: 0. For define min value.
+     * @arg {number} - Default: 1. For define max value.
      * 
      * @returns {promise}
      */
@@ -418,10 +560,7 @@ export default class {
             }
 
             await func.validate()
-            if (func.result.error) {
-                resolve(func.err())
-                return
-            }
+            if (func.result.error) { resolve(func.err()); return }
             resolve(func.succ(Math.floor(Math.random() * (func.opt.max - func.opt.min + 1) + func.opt.min)))
             return
         })

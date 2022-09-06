@@ -81,7 +81,7 @@ const self = `${folderName}->test.js`;
     // var options = {
     //     test1_1: undefined,
     //     test1_2: true,
-    //     test1_3: 1,
+    //     // test1_3: 1,
     //     test1_4: `/etc/hostname`,
     //     test1_5: Symbol(`a`),
     //     test1_6: null,
@@ -89,7 +89,9 @@ const self = `${folderName}->test.js`;
     //     test1_8: [ `test1`, `test2` ],
     //     test1_9: createReadStream(`/etc/hostname`),
     //     test1_10: createWriteStream(`/etc/hostname`),
-    //     test1_11: () => {}
+    //     test1_11: () => {},
+    //     test1_12: 8,
+    //     test1_13: `-10000000000000000000000000000`
     // }
     // var availableValues = {
     //     test1_1: {},
@@ -123,6 +125,12 @@ const self = `${folderName}->test.js`;
     //     test1_8: {
     //         minLength: 2,
     //         maxLength: 2
+    //     },
+    //     test1_12: {
+    //         mustBePositiveNum: true
+    //     },
+    //     test1_13: {
+    //         mustBeNegativeNum: true
     //     }
     // }
     // run = await corelight.isAvailableValues(func, options, availableValues, { valuesMatch: false })
