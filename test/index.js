@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream } from 'fs'
+import { createReadStream, createWriteStream, writeFileSync } from 'fs'
 import corelight from '../'
 
 const folderName = `test`
@@ -11,6 +11,11 @@ const self = `${folderName}->test.js`;
     // console.log(`Function 'getType':`)
     // var options = `test string`
     // run = corelight.getType(func, options)
+    // console.log(run)
+    // console.log(`\n`)
+
+    // console.log(`Function 'getTs':`)
+    // run = await corelight.getTs()
     // console.log(run)
     // console.log(`\n`)
 
@@ -138,12 +143,19 @@ const self = `${folderName}->test.js`;
     // console.log(`\n`)
 
     // console.log(`Function 'try' (without errors):`)
-    // run = await corelight.try(func, () => { return `Hello world` })
+    // var options = () => { return `Hello world` }
+    // run = await corelight.try(func, options)
     // console.log(run)
     // console.log(`\n`)
 
     // console.log(`Function 'try' (with errors):`)
-    // run = await corelight.try(func, () => { throw(`Error message`) })
+    // var options = () => { return `Hello world` }
+    // run = await corelight.try(func, options)
+    // console.log(run)
+    // console.log(`\n`)
+
+    // console.log(`Function 'isNum':`)
+    // run = await corelight.isNum(func, `-112233445566778899`, { mustBePositive: false, mustBeNegative: true })
     // console.log(run)
     // console.log(`\n`)
 

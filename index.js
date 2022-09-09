@@ -1,4 +1,5 @@
 import { existsSync } from 'fs'
+import { exec } from 'child_process'
 import { Readable, Writable } from 'stream'
 import func from './lib/func'
 
@@ -7,7 +8,7 @@ export default class {
     static func = func
 
     /**
-     * @arg {any} - Default: undefined.
+     * @arg {any} @param value  - Default: undefined.
      * 
      * @returns {string}
      */
@@ -16,13 +17,34 @@ export default class {
         if (opt.length) value = opt[0]
         return Object.prototype.toString.call(value).replace(`[object `, ``).replace(`]`, ``)
     }
+    
+    /**
+     * @arg {boolean} @param isShort  - Default: false. If false - timestamp length is 13, if true - 10.
+     * 
+     * @returns {number}
+     */
+    static getTs = (...opt) => {
+        let isShort = false
+        if (opt.length && this.getType(opt[0]) === `Boolean`) isShort = opt[0]
+        return isShort ? parseInt(Date.now().toString().substr(0, 10)) : Date.now()
+    }
 
     /**
-     * @arg {object-1.options        {object}} - Default: {}
-     * @arg {object-1.defaultOptions {object}} - Default: {}
-     * @arg {object-2.defaultMatch   {boolean}} - Default: false
-     * @arg {object-2.defaultPrimary {boolean}} - Default: false
-     * @arg {object-2.defaultPure    {boolean}} - Default: false
+     * @arg {string} @param path  - Default: false. If false - timestamp length is 13, if true - 10.
+     * 
+     * @returns {boolean}
+     */
+    static isExistsPath = (...opt) => {
+        if (!opt.length || this.getType(opt[0]) !== `String`) return false
+        return existsSync(opt[0])
+    }
+
+    /**
+     * @arg {object} @param object_1.options - Default: {}
+     * @arg {object} @param object_1.defaultOptions - Default: {}
+     * @arg {boolean} @param object_2.defaultMatch - Default: false
+     * @arg {boolean} @param object_2.defaultPrimary - Default: false
+     * @arg {boolean} @param object_2.defaultPure - Default: false
      * 
      * @returns {promise}
      */
@@ -32,7 +54,6 @@ export default class {
                 .args(`options`)
                 .args(`defaultOptions`)
                 .args()
-            let run
 
             if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
             if (this.getType(func.opt.defaultOptions) !== `Object`) func.opt.defaultOptions = {}
@@ -40,6 +61,7 @@ export default class {
             if (this.getType(func.opt.defaultPrimary) !== `Boolean`) func.opt.defaultPrimary = false
             if (this.getType(func.opt.defaultPure) !== `Boolean`) func.opt.defaultPure = false
             
+            let run
             let newOptions = {}
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
@@ -83,9 +105,9 @@ export default class {
     }
 
     /**
-     * @arg {object_1.options        {object}} - Default: {}
-     * @arg {object_1.availableTypes {object}} - Default: {}
-     * @arg {object_2.typesMatch     {boolean}} - Default: false
+     * @arg {object} @param object_1.options - Default: {}
+     * @arg {object} @param object_1.availableTypes - Default: {}
+     * @arg {boolean} @param object_2.typesMatch - Default: false
      * 
      * @returns {promise}
      */
@@ -95,12 +117,12 @@ export default class {
                 .args(`options`)
                 .args(`availableTypes`)
                 .args()
-            let run
 
             if (this.getType(func.opt.options) !== `Object`) func.opt.options = {}
             if (this.getType(func.opt.availableTypes) !== `Object`) func.opt.availableTypes = {}
             if (this.getType(func.opt.typesMatch) !== `Boolean`) func.opt.typesMatch = false
     
+            let run
             for (const optionName in func.opt.options) {
                 let optionValue = func.opt.options[optionName]
                 let optionValueType = this.getType(func.opt.options[optionName])
@@ -155,9 +177,9 @@ export default class {
     }
 
     /**
-     * @arg {object_1.options         {object}} - Default: {}
-     * @arg {object_1.availableValues {object}} - Default: {}
-     * @arg {object_2.valuesMatch     {boolean}} - Default: false
+     * @arg {object} @param object_1.options - Default: {}
+     * @arg {object} @param object_1.availableValues - Default: {}
+     * @arg {boolean} @param object_2.valuesMatch - Default: false
      * 
      * @returns {promise}
      */
@@ -174,13 +196,12 @@ export default class {
 
             let isInt = (value, mustBePositive = false, mustBeNegative = false) => {
                 if (this.getType(value) !== `Number`) return false
+                // if (value < Number.EPSILON) return false
                 if (value === Number.NaN) return false
                 if (value === Number.POSITIVE_INFINITY) return false
                 if (value === Number.NEGATIVE_INFINITY) return false
-                // if (value < Number.EPSILON) return false
                 if (value > Number.MAX_SAFE_INTEGER) return false
                 if (value < Number.MIN_SAFE_INTEGER) return false
-
                 if (value.toString().includes(`.`) && value > MAX_VALUE) return false
                 if (value.toString().includes(`.`) && value < MIN_VALUE) return false
                 if (mustBePositive && value < 0) return false
@@ -190,10 +211,13 @@ export default class {
 
             let isBigInt = (value, mustBePositive = false, mustBeNegative = false) => {
                 if (this.getType(value) !== `String`) return false
-                let availableChars = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `-` ]
-                if (mustBePositive) availableChars.shift()
-                let numbers = value.split(``)
-                for (let number of numbers) if (!availableChars.includes(number)) { return false }
+                let availableChars = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9` ]
+                let chars = value.split(``)
+                let i = 0
+                for (let char of chars) {
+                    if (char === `-` && i !== 1) return false
+                    if (!availableChars.includes(char)) return false
+                }
                 if (mustBePositive && BigInt(value) < BigInt(`0`)) return false
                 if (mustBeNegative && BigInt(value) >= BigInt(`0`)) return false
                 return true
@@ -427,12 +451,12 @@ export default class {
                             }
 
                             if (!valuesValueValue) {
-                                if (existsSync(optionValue)) {
+                                if (this.isExistsPath(optionValue)) {
                                     resolve(func.err(`'options.${optionName}' (${optionValue}) path must be not exists, because 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue.toString()}).`, `23`, 2))
                                     return
                                 }
                             } else {
-                                if (!existsSync(optionValue)) {
+                                if (!this.isExistsPath(optionValue)) {
                                     resolve(func.err(`'options.${optionName}' (${optionValue}) path must be exists, because 'availableValues.${optionName}.${valuesValueName}' (${valuesValueValue.toString()}).`, `24`, 2))
                                     return
                                 }
@@ -450,14 +474,14 @@ export default class {
     }
 
     /**
-     * @arg {object.options        {object}} - Default: {}
-     * @arg {object.default        {object}} - Default: {}
-     * @arg {object.types          {object}} - Default: {}
-     * @arg {object.defaultMatch   {boolean}} - Default: false
-     * @arg {object.defaultPrimary {boolean}} - Default: false
-     * @arg {object.defaultPure    {boolean}} - Default: false
-     * @arg {object.typesMatch     {boolean}} - Default: false
-     * @arg {object.valuesMatch    {boolean}} - Default: false
+     * @arg {object} @param object.options - Default: {}
+     * @arg {object} @param object.default - Default: {}
+     * @arg {object} @param object.types - Default: {}
+     * @arg {boolean} @param object.defaultMatch - Default: false
+     * @arg {boolean} @param object.defaultPrimary - Default: false
+     * @arg {boolean} @param object.defaultPure - Default: false
+     * @arg {boolean} @param object.typesMatch - Default: false
+     * @arg {boolean} @param object.valuesMatch - Default: false
      * 
      * @returns {promise} 
      */
@@ -499,47 +523,177 @@ export default class {
     }
 
     /**
-     * @arg {function} - Default: () => {}.
+     * @arg {string} @param data  - Required. String where need to remove secure words.
+     * @arg {array} @param secureWords  - Default: []. Secure words.
+     * 
+     * @returns {promise}
+     */
+    secure = (...opt) => {
+        return new Promise(async (resolve) => {
+            let func = this.func.init(`${this.self}->secure`, opt)
+                .args(`data`)
+                .args(`secureWords`)
+
+            func.default = {
+                secureWords: []
+            }
+
+            func.types = {
+                data: [ `String` ],
+                secureWords: [ `Array` ]
+            }
+
+            await func.validate()
+            if (func.result.error) { resolve(func.err()); return }
+
+            for (let secureWord of func.opt.secureWords) {
+                if (this.getType(secureWord) === `String`) func.opt.data = func.opt.data.replaceAll(secureWord, ``)
+            }
+            resolve(func.succ(func.opt.data))
+            return
+        })
+    }
+
+    /**
+     * @arg {string} @param cmd  - Required.
+     * @arg {array} @param secureWords  - Default: []. Secure words.
+     * 
+     * @returns {promise}
+     */
+    execCmd = (...opt) => {
+        return new Promise(async (resolve) => {
+            let func = this.func.init(`${this.self}->execCmd`, opt)
+                .args(`cmd`)
+                .args(`secureWords`)
+            
+            func.default = {
+                secureWords: []
+            }
+
+            func.types = {
+                cmd: [ `String` ],
+                secureWords: [ `Array` ]
+            }
+
+            await func.validate({ defaultPure: true })
+            if (func.result.error) { resolve(func.err()); return }
+
+            exec(func.opt.cmd, async (err, stdout, stderr) => {
+                let output = ``
+                if (err) output += err.message
+                if (stdout) output += `\n` + stdout
+                if (stderr) output += `\n` + stderr
+
+                if (func.opt.secureWords.length) {
+                    let run = await this.secure(output, func.opt.secureWords)
+                    if (run.error) { resolve(func.err(run)); return }
+                    output = run.data
+                }
+
+                resolve(func.succ(output))
+                return
+            })
+            return
+        })
+    }
+
+    /**
+     * @arg {function} @param func - Default: () => {}.
+     * @arg {array} @param args  - Default: [].
+     * @arg {array} @param secureWords - Default: []. Secure words.
      * 
      * @returns {promise}
      */
     static try = (...opt) => {
         return new Promise(async (resolve) => {
             let func = this.func.init(`${this.self}->try`, opt)
-                .args(`data`)
+                .args(`func`)
+                .args(`args`)
+                .args(`secureWords`)
 
             func.default = {
-                data: () => {}
+                func: () => {},
+                args: [],
+                secureWords: []
             }
 
             func.types = {
-                data: [ `Function` ]
+                func: [ `Function` ],
+                args: [ `Array` ],
+                secureWords: [ `Array` ]
             }
 
             await func.validate()
             if (func.result.error) { resolve(func.err()); return }
 
-            let run
-            try { run = func.opt.data(); resolve(func.succ(run)) } catch (error) { resolve(func.err(`error`, `1`)) }
+            let run, run2
+            try { 
+                run = func.opt.func.apply(this, func.opt.args)
+                if (func.opt.secureWords.length && this.getType(run) === `String`) {
+                    run2 = this.secure(run, func.opt.secureWords)
+                    if (run2.error) { resolve(func.err(run2)); return }
+                    run = run2.data
+                }
+                resolve(func.succ(run))
+            } catch (error) {
+                error = error.toString()
+                if (func.opt.secureWords.length && this.getType(error) === `String`) {
+                    run2 = this.secure(error, func.opt.secureWords)
+                    if (run2.error) { resolve(func.err(run2)); return }
+                    error = run2.data
+                }
+                resolve(func.err(error, `1`, 2))
+            }
             return
         })
     }
 
     /**
-     * @arg {number} - Default: 0. For define min value.
-     * @arg {number} - Default: 1. For define max value.
+     * @arg {number/string} @param num - Required.
+     * @arg {boolean} @param object.mustBePositive - Default: false.
+     * @arg {boolean} @param object.mustBeNegative - Default: false.
      * 
      * @returns {promise}
      */
-    static isValidNum = (...opt) => {
+    static isNum = (...opt) => {
         return new Promise(async (resolve) => {
+            let func = this.func.init(`${this.self}->isNum`, opt)
+                .args(`num`)
+                .args()
 
+            func.default = {
+                mustBePositive: false,
+                mustBeNegative: false
+            }
+
+            func.types = {
+                num: [ `Number`, `String` ],
+                mustBePositive: [ `Boolean` ],
+                mustBeNegative: [ `Boolean` ],
+            }
+
+            await func.validate()
+            if (func.result.error) { resolve(func.err()); return }
+
+            func.opt.num = func.opt.num.toString()
+            let availableChars = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9` ]
+            let chars = func.opt.num.split(``)
+            let i = 0
+            for (let char of chars) {
+                i++
+                if (char === `-` && i !== 1) { resolve(func.succ(false)); return }
+                if (!availableChars.includes(char)) { resolve(func.succ(false)); return }
+            }
+            if (func.opt.mustBePositive && BigInt(func.opt.num) < BigInt(`0`)) { resolve(func.succ(false)); return }
+            if (func.opt.mustBeNegative && BigInt(func.opt.num) >= BigInt(`0`)) { resolve(func.succ(false)); return }
+            resolve(func.succ(true))
+            return
         })
     }
 
     /**
-     * @arg {number} - Default: 0. For define min value.
-     * @arg {number} - Default: 1. For define max value.
+     * @arg {number} @param min  - Default: 0. For define min value.
+     * @arg {number} @param max  - Default: 1. For define max value.
      * 
      * @returns {promise}
      */
@@ -566,4 +720,78 @@ export default class {
         })
     }
 
+    /**
+     * @arg {number} @param length  - Default: 13. For define result length.
+     * @arg {string} @param object.letterCase  - Default: 'lower'. Can be 'lower', 'upper', 'mixed'.
+     * @arg {array} @param object.lettersLib  - Default: [ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' ].
+     * @arg {array} @param object.numbersLib - Default: [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ].
+     * @arg {array} @param object.specialLib - Default: [ '!', '@', '#', '$', '%', '&', '*', '(', ')', '-', '_', '+', ':', ',', '.', ';', '[', ']', '{', '}', '<', '>' ].
+     * @arg {array} @param object.customLib - Default: [].
+     * @arg {boolean} @param object.lettersEnable - Default: true.
+     * @arg {boolean} @param object.numbersEnable - Default: true.
+     * @arg {boolean} @param object.specialEnable - Default: false.
+     * @arg {boolean} @param object.customEnable - Default: true.
+     * 
+     * @returns {promise}
+     */
+    static getRandStr = (...opt) => {
+        return new Promise(async (resolve) => {
+            let func = this.func.init(`${this.self}->getRandStr`, opt)
+                .args(`length`)
+                .args()
+            
+            func.default = {
+                length: 13,
+                letterCase: `lower`,
+                lettersLib: [ `a`, `b`, `c`, `d`, `e`, `f`, `g`, `h`, `i`, `j`, `k`, `l`, `m`, `n`, `o`, `p`, `q`, `r`, `s`, `t`, `u`, `v`, `w`, `x`, `y`, `z` ],
+                numbersLib: [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9` ],
+                specialLib: [ `!`, `@`, `#`, `$`, `%`, `&`, `*`, `(`, `)`, `-`, `_`, `+`, `:`, `,`, `.`, `;`, `[`, `]`, `{`, `}`, `<`, `>` ],
+                customLib: [],
+                lettersEnable: true,
+                numbersEnable: true,
+                specialEnable: false,
+                customEnable: false
+            }
+
+            func.types = {
+                letterCase: [ `String` ],
+                lettersLib: [ `Array` ],
+                numbersLib: [ `Array` ],
+                specialLib: [ `Array` ],
+                customLib: [ `Array` ],
+                lettersEnable: [ `Boolean` ],
+                numbersEnable: [ `Boolean` ],
+                specialEnable: [ `Boolean` ],
+                customEnable: [ `Boolean` ],
+            }
+
+            await func.validate()
+            if (func.result.error) { resolve(func.err()); return }
+
+            let lib = []
+            if (func.opt.lettersEnable) lib.concat(func.opt.lettersLib)
+            if (func.opt.numbersEnable) lib.concat(func.opt.numbersLib)
+            if (func.opt.specialEnable) lib.concat(func.opt.specialLib)
+            if (func.opt.customEnable) lib.concat(func.opt.customLib)
+
+            let string = ``
+            for (let i = 0; i < func.opt.length; i++) {
+                let char = lib[Math.floor(Math.random() * lib.length)]
+                if (options.letterCase === 'lower') {
+                    char = char.toLowerCase()
+                } else if (options.letterCase === 'upper') {
+                    char = char.toUpperCase()
+                } else {
+                    if (Math.floor(Math.random() * 2)) {
+                        char = char.toLowerCase()
+                    } else {
+                        char = char.toUpperCase()
+                    }
+                }
+                string += char
+            }
+            resolve(func.succ(string))
+            return
+        })
+    }
 }
