@@ -628,7 +628,7 @@ export default class {
             try {
                 run = func.opt.func.apply(this, func.opt.args)
                 if (func.opt.secureWords.length && this.getType(run) === `String`) {
-                    run2 = this.secure(run, func.opt.secureWords)
+                    run2 = await this.secure(run, func.opt.secureWords)
                     if (run2.error) { resolve(func.err(run2)); return }
                     run = run2.data
                 }
@@ -636,7 +636,7 @@ export default class {
             } catch (error) {
                 error = error.toString()
                 if (func.opt.secureWords.length && this.getType(error) === `String`) {
-                    run2 = this.secure(error, func.opt.secureWords)
+                    run2 = await this.secure(error, func.opt.secureWords)
                     if (run2.error) { resolve(func.err(run2)); return }
                     error = run2.data
                 }
