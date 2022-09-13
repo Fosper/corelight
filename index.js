@@ -17,6 +17,19 @@ export default class {
         if (opt.length) value = opt[0]
         return Object.prototype.toString.call(value).replace(`[object `, ``).replace(`]`, ``)
     }
+
+    /**
+     * @param {any} @arg ms  - Default: 1000.
+     * 
+     * @returns {string}
+     */
+    static sleep = (...opt) => {
+        return new Promise(resolve => {
+            let ms = 1000
+            if (opt.length && this.getType(opt[0]) === `Number`) ms = opt[0]
+            setTimeout(resolve, ms)
+        })
+    }
     
     /**
      * @param {boolean} @arg isShort  - Default: false. If false - timestamp length is 13, if true - 10.
