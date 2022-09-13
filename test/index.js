@@ -15,6 +15,12 @@ const self = `${folderName}->test.js`;
     // console.log(run)
     // console.log(`\n`)
 
+    // console.log(`Function 'sleep':`)
+    // var options = `test string`
+    // await corelight.sleep(5000)
+    // console.log(options)
+    // console.log(`\n`)
+
     // console.log(`Function 'getTs':`)
     // run = corelight.getTs().data
     // console.log(run)
