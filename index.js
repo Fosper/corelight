@@ -661,7 +661,7 @@ export default class {
             }
 
             func.types = {
-                func: [ `Function` ],
+                func: [ `Function`, `AsyncFunction` ],
                 args: [ `Array` ],
                 secureWords: [ `Array` ]
             }
