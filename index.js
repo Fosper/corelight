@@ -680,13 +680,15 @@ export default class {
                             res = run2.data
                         }
                         resolve(func.succ(res))
-                    }).catch(async (err) => {
-                        if (func.opt.secureWords.length && this.getType(err) === `String`) {
+                    }).catch(async (error) => {
+                        error = error.toString()
+                        if (func.opt.secureWords.length && this.getType(error) === `String`) {
                             run2 = await this.secure(err, func.opt.secureWords)
                             if (run2.error) { resolve(func.err(run2)); return }
-                            err = run2.data
+                            error = run2.data
                         }
-                        resolve(func.err(err))
+                        resolve(func.err(error, `2`, 2))
+                        return
                     })
                 } else {
                     if (func.opt.secureWords.length && this.getType(run) === `String`) {
