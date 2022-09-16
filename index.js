@@ -672,12 +672,30 @@ export default class {
             let run, run2
             try {
                 run = func.opt.func.apply(this, func.opt.args)
-                if (func.opt.secureWords.length && this.getType(run) === `String`) {
-                    run2 = await this.secure(run, func.opt.secureWords)
-                    if (run2.error) { resolve(func.err(run2)); return }
-                    run = run2.data
+                if (this.getType(run) === `Promise`) {
+                    run.then(async (res) => {
+                        if (func.opt.secureWords.length && this.getType(res) === `String`) {
+                            run2 = await this.secure(res, func.opt.secureWords)
+                            if (run2.error) { resolve(func.err(run2)); return }
+                            res = run2.data
+                        }
+                        resolve(func.succ(res))
+                    }).catch(async (err) => {
+                        if (func.opt.secureWords.length && this.getType(err) === `String`) {
+                            run2 = await this.secure(err, func.opt.secureWords)
+                            if (run2.error) { resolve(func.err(run2)); return }
+                            err = run2.data
+                        }
+                        resolve(func.err(err))
+                    })
+                } else {
+                    if (func.opt.secureWords.length && this.getType(run) === `String`) {
+                        run2 = await this.secure(run, func.opt.secureWords)
+                        if (run2.error) { resolve(func.err(run2)); return }
+                        run = run2.data
+                    }
+                    resolve(func.succ(run))
                 }
-                resolve(func.succ(run))
             } catch (error) {
                 error = error.toString()
                 if (func.opt.secureWords.length && this.getType(error) === `String`) {

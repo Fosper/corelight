@@ -166,7 +166,27 @@ const self = `${folderName}->test.js`;
     // console.log(`\n`)
 
     // console.log(`Function 'try' (with errors):`)
-    // var options = () => { return `Hello world` }
+    // var options = () => { throw(`Error example`) }
+    // run = await corelight.try(func, options)
+    // console.log(run)
+    // console.log(`\n`)
+
+    // console.log(`Function 'try' (promise) (without errors):`)
+    // var options = () => {
+    //     return new Promise(async (resolve, reject) => {
+    //         setTimeout(() => { resolve(`Hello World`) }, 3000)
+    //     })
+    // }
+    // run = await corelight.try(func, options)
+    // console.log(run)
+    // console.log(`\n`)
+
+    // console.log(`Function 'try' (promise) (with errors):`)
+    // var options = () => {
+    //     return new Promise(async (resolve, reject) => {
+    //         setTimeout(() => { reject(`Error example`) }, 3000)
+    //     })
+    // }
     // run = await corelight.try(func, options)
     // console.log(run)
     // console.log(`\n`)
