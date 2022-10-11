@@ -1,6 +1,6 @@
 {
   "name": "corelight",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "Quickly and easily NodeJS tools.",
   "main": "index.js",
   "type": "module",
